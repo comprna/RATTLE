@@ -1,3 +1,6 @@
 [submodule "seqan"]
 	path = seqan
 	url = https://github.com/seqan/seqan
+[submodule "hps"]
+	path = hps
+	url = https://github.com/jl2922/hps
