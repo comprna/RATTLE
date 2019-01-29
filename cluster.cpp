@@ -61,13 +61,22 @@ cluster_set_t cluster_reads(const read_set_t &reads, int kmer_size, double t_s, 
     std::vector<kmer_bv_t> bv_kmers(reads.size());
     std::vector<kmer_bv_t> rev_bv_kmers(reads.size());
     
-    for (int i = 0; i < reads.size(); ++i) {
-        read_kmers_t k1 = extract_kmers_from_read(reads[i].seq, kmer_size);
+    std::vector<std::future<void>> tasks;
+    for (int t = 0; t < n_threads; ++t) {
+        tasks.emplace_back(std::async(std::launch::async, [t, &reads, n_threads, kmer_size, &kmers, &rev_kmers, &bv_kmers, &rev_bv_kmers] {
+            for (int i = t; i < reads.size(); i+=n_threads) {
+                read_kmers_t k1 = extract_kmers_from_read(reads[i].seq, kmer_size);
 
-        kmers[i] = k1.list_forward;
-        rev_kmers[i] = k1.list_reverse;
-        bv_kmers[i] = k1.bv_forward;
-        rev_bv_kmers[i] = k1.bv_reverse;
+                kmers[i] = k1.list_forward;
+                rev_kmers[i] = k1.list_reverse;
+                bv_kmers[i] = k1.bv_forward;
+                rev_bv_kmers[i] = k1.bv_reverse;
+            }
+        }));
+    }
+
+    for (auto &&task : tasks) {
+        task.get();
     }
 
     // create initial clusters
@@ -80,8 +89,7 @@ cluster_set_t cluster_reads(const read_set_t &reads, int kmer_size, double t_s, 
         }
 
         std::vector<cseq_t> cseqs;
-        std::vector<std::future<void>> tasks;
-
+        
         cseqs.push_back(cseq_t{i, false});
         already_clustered[i] = true;
 
