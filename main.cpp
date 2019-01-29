@@ -8,6 +8,7 @@
 #include <future>
 #include <fstream>
 #include <stdio.h>
+#include <algorithm>
 
 #include <seqan/align.h>
 #include <seqan/graph_msa.h>
@@ -32,11 +33,19 @@ int main(int argc, char *argv[]) {
             { "threads", {"-t", "--threads"},
             "number of threads to use (default: 1)", 1},
             { "kmer_size", {"-k", "--kmer-size"},
-            "k-mer size (default: 6)", 1},
+            "k-mer size for gene clustering (default: 14)", 1},
             { "t_s", {"-s", "--score-threshold"},
-            "minimum score for two reads to be in the same cluster (default: 0.25)", 1},  
+            "minimum score for two reads to be in the same gene cluster (default: 0.1)", 1},  
             { "t_v", {"-v", "--max-variance"},
-            "max allowed variance for two reads to be in the same cluster (default: 250)", 1},
+            "max allowed variance for two reads to be in the same gene cluster (default: 500)", 1},
+            { "iso", {"--iso"},
+            "perform clustering at the isoform level", 0},
+            { "iso_kmer_size", {"--iso-kmer-size"},
+            "k-mer size for isoform clustering (default: 7)", 1},
+            { "iso_t_s", {"--iso-score-threshold"},
+            "minimum score for two reads to be in the same isoform cluster (default: 0.25)", 1},  
+            { "iso_t_v", {"--iso-max-variance"},
+            "max allowed variance for two reads to be in the same isoform cluster (default: 10)", 1},
             { "bv_threshold", {"-B", "--bv-start-threshold"},
             "starting threshold for the bitvector k-mer comparison (default: 0.4)", 1},  
             { "bv_min_threshold", {"-b", "--bv-end-threshold"},
@@ -77,32 +86,68 @@ int main(int argc, char *argv[]) {
         }
 
         int n_threads = args["threads"].as<int>(1);
-        int kmer_size = args["kmer_size"].as<int>(6);
-        double t_s = args["t_s"].as<double>(0.25);
-        double t_v = args["t_v"].as<double>(250);
+
+        int kmer_size = args["kmer_size"].as<int>(14);
+        double t_s = args["t_s"].as<double>(0.1);
+        double t_v = args["t_v"].as<double>(500);
+
+        int iso_kmer_size = args["iso_kmer_size"].as<int>(7);
+        double iso_t_s = args["iso_t_s"].as<double>(0.25);
+        double iso_t_v = args["iso_t_v"].as<double>(10);
+
         double bv_threshold = args["bv_threshold"].as<double>(0.4);
         double bv_min_threshold = args["bv_min_threshold"].as<double>(0.2);
         double bv_falloff = args["bv_falloff"].as<double>(0.05);
+
         int min_reads_cluster = args["min_reads_cluster"].as<int>(0);
 
         sort_read_set(reads);
 
-        auto clusters = cluster_reads(reads, kmer_size, t_s, t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, n_threads);
-        
-        std::cerr << "Clustering done" << std::endl;
-
-        // std::cout << clusters.size() << std::endl;
-        // int i = 0;
-        // for (auto &c : clusters) {
-        //     for (auto &cs : c.seqs) {
-        //         std::cout << reads[cs.seq_id].header << "," << i << "," << cs.rev << std::endl;
-        //     }
-
-        //     ++i;
-        // }
-
+        auto gene_clusters = cluster_reads(reads, kmer_size, t_s, t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, n_threads);
         std::ofstream out_file(args["clusters"].as<std::string>("clusters.out"), std::ofstream::binary);
-        hps::to_stream(clusters, out_file);
+        
+        std::cerr << "Gene clustering done" << std::endl;
+        std::cerr << gene_clusters.size() << "gene clusters found" << std::endl;
+        if (!args["iso"]) {
+            hps::to_stream(gene_clusters, out_file);
+            return EXIT_SUCCESS;
+        }
+
+        // clustering at isoform level
+        cluster_set_t iso_clusters;
+        int i = 0;
+        for (auto &c : gene_clusters) {
+            std::cerr << i << "gene cluster to isoform clusters" << std::endl;
+
+            // sort gene cluster seqs by size
+            std::stable_sort(c.seqs.begin(), c.seqs.end(), [&reads](cseq_t a, cseq_t b) {
+                return reads[a.seq_id].seq.size() > reads[b.seq_id].seq.size();
+            });
+
+            // generate new read set with gene cluster reads
+            read_set_t gene_reads;
+            for (auto &cs : c.seqs) {
+                gene_reads.push_back(reads[cs.seq_id]);
+            }
+
+            // cluster gene reads & save new iso clusters
+            auto iso_clusters_tmp = cluster_reads(gene_reads, iso_kmer_size, iso_t_s, iso_t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, n_threads);
+            for (auto &ic : iso_clusters_tmp) {
+                cluster_t iso_cluster;
+                iso_cluster.main_seq = cseq_t{c.seqs[ic.main_seq.seq_id].seq_id, ic.main_seq.rev};
+
+                for (auto &ics : ic.seqs) {
+                    iso_cluster.seqs.push_back(cseq_t{c.seqs[ics.seq_id].seq_id, ics.rev});
+                }
+
+                iso_clusters.push_back(iso_cluster);
+            }
+
+            ++i;
+        }
+
+        hps::to_stream(iso_clusters, out_file);
+        return EXIT_SUCCESS;
     } else if (!strcmp(mode, "correct")) {
         argagg::parser argparser {{
             { "help", {"-h", "--help"},
