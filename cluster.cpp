@@ -30,7 +30,9 @@ cseq_t cluster_together(const read_set_t &reads, const std::vector<std::vector<k
                 return cseq_t{j, false};
             }
         }
-    } else if (rev_bv_common/mmax >= bv_threshold) {
+    }
+    
+    if (rev_bv_common/mmax >= bv_threshold) {
         auto rev_common = get_common_kmers(kmers[i], rev_kmers[j]);
         auto rev_sim = calc_similarity(rev_common, kmer_size);
 
