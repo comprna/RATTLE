@@ -91,6 +91,7 @@ cluster_set_t cluster_reads(const read_set_t &reads, int kmer_size, double t_s, 
         }
 
         std::vector<cseq_t> cseqs;
+        std::vector<std::future<void>> tasks;
         
         cseqs.push_back(cseq_t{i, false});
         already_clustered[i] = true;
