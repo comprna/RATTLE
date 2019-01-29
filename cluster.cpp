@@ -16,26 +16,29 @@ cseq_t cluster_together(const read_set_t &reads, const std::vector<std::vector<k
     double mmax = std::max(bv_kmers[i].count(), bv_kmers[j].count());
     double bv_score = std::max(bv_common/mmax, rev_bv_common/mmax);
 
-    // TODO: only do common or reverse according to bv_common and rev_bv_common
-    if (bv_score >= bv_threshold) {
+    if (bv_common/mmax >= bv_threshold) {
         auto common = get_common_kmers(kmers[i], kmers[j]);
-        auto rev_common = get_common_kmers(kmers[i], rev_kmers[j]);
-
         auto sim = calc_similarity(common, kmer_size);
-        auto rev_sim = calc_similarity(rev_common, kmer_size);
 
         // normalize scores
         double mn = std::min(reads[i].seq.size(), reads[j].seq.size());
-
         double norm_score = double(sim.bases)/mn;
-        double rev_norm_score = double(rev_sim.bases)/mn;
 
         if (norm_score >= t_s) {
             // normal strand
             if (var(sim.distances) < t_v) {
                 return cseq_t{j, false};
             }
-        } else if (rev_norm_score >= t_s) {
+        }
+    } else if (rev_bv_common/mmax >= bv_threshold) {
+        auto rev_common = get_common_kmers(kmers[i], rev_kmers[j]);
+        auto rev_sim = calc_similarity(rev_common, kmer_size);
+
+        // normalize scores
+        double mn = std::min(reads[i].seq.size(), reads[j].seq.size());
+        double rev_norm_score = double(rev_sim.bases)/mn;
+
+        if (rev_norm_score >= t_s) {
             // reverse strand
             if (var(rev_sim.distances) < t_v) {
                 return cseq_t{j, true};
