@@ -9,16 +9,29 @@ read_set_t read_fasta_file(std::string file) {
     std::ifstream infile(file);
     std::string line;
     std::string header;
+    std::string seq;
 
     while (std::getline(infile, line)) {
         if (line.size() == 0) continue;
 
         if (line[0] == '>') {
+            if (!header.empty()) {
+                std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
+                read_t r{header, seq, "", ""};
+                result.push_back(r);
+            }
+
+            seq = "";
             header = line;
         } else {
-            read_t r{header, line, "", ""};
-            result.push_back(r);
+            seq += line;
         }
+    }
+
+    std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
+    if (!header.empty()) {
+        read_t r{header, seq, "", ""};
+        result.push_back(r);
     }
 
     return result;
