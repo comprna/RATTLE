@@ -1,5 +1,15 @@
 #include "utils.hpp"
 #include <iostream>
+#include <math.h>
+
+char phred_symbol(double p) {
+    return -10 * log10(p) + 33;
+}
+
+double phred_err(char c) {
+    double q = c - 33;
+    return pow10(-q/10.0);
+}
 
 std::string reverse_complement(std::string seq) {      
     std::string res = seq;

@@ -12,6 +12,8 @@ const std::unordered_map<char, char> base_complements = {
     {'G', 'C'}
 };
 
+char phred_symbol(double p);
+double phred_err(char c);
 std::string reverse_complement(std::string seq);
 double mean(std::vector<int> s);
 double var(std::vector<int> s);

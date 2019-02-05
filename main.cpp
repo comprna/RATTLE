@@ -1,6 +1,7 @@
 #include "fasta.hpp"
 #include "cluster.hpp"
 #include "utils.hpp"
+#include "correct.hpp"
 #include "argagg.hpp"
 #include "hps/src/hps.h"
 
@@ -19,6 +20,12 @@ typedef seqan::StringSet<seqan::DnaString> TStringSet;
 typedef seqan::Graph<seqan::Alignment<seqan::StringSet<seqan::DnaString, seqan::Dependent<>>, void>> TAlignmentGraph;
 
 int main(int argc, char *argv[]) {
+    if (argc < 2) {
+        std::cout<<phred_err('!')<<phred_err('"')<<phred_err('K')<<std::endl;
+        std::cout << "Run with mode: ./rattle <cluster|cluster_summary|extract_clusters|correct>" << std::endl;
+        return EXIT_FAILURE;
+    }
+
     char* mode = argv[1];
     if (!strcmp(mode, "cluster")) {
         argagg::parser argparser {{
@@ -156,8 +163,8 @@ int main(int argc, char *argv[]) {
             "input fasta/fastq file (required)", 1},
             { "clusters", {"-c", "--clusters"},
             "clusters file (required)", 1},
-            { "fastq", {"--fastq"},
-            "whether input and output should be in fastq format (instead of fasta)", 0},
+            { "mafft-path", {"--mafft-path"},
+            "path to mafft (default: mafft)", 1},
             { "threads", {"-t", "--threads"},
             "number of threads to use (default: 1)", 1},
         }};
@@ -190,62 +197,64 @@ int main(int argc, char *argv[]) {
         std::cerr << "Reading fasta file... ";
         
         // TODO: handle non-existing file
-        read_set_t reads;
-        if (args["fastq"]) {
-            reads = read_fastq_file(args["input"]);
-        } else {
-            reads = read_fasta_file(args["input"]);
-        }
+        read_set_t reads = read_fastq_file(args["input"]);
 
         sort_read_set(reads);
 
         int n_threads = args["threads"].as<int>(1);
         std::ifstream in_file(args["clusters"].as<std::string>(), std::ifstream::binary);
         auto clusters = hps::from_stream<cluster_set_t>(in_file);
+        int cid = 0;
 
-        // sort the clusters by size to distribute workload somewhat evenly between cores
-        // std::cout << clusters.size() << std::endl;
-        // int i = 0;
-        // for (auto &c : clusters) {
-        //     for (auto &cs : c.seqs) {
-        //         std::cout << reads[cs.seq_id].header << "," << i << "," << cs.rev << std::endl;
-        //     }
+        for (auto &tc: clusters) {
+            std::cerr << "Correcting cluster " << cid << " (" << tc.seqs.size() << ")" << std::endl;
 
-        //     ++i;
-        // }
+            std::ofstream file_fa;
+            file_fa.open ("rattle_cluster.fa");
 
-        // msa
-        seqan::Score<int> scoringScheme(5, -3, -1, -3); // match, mismatch, extend, open
-        auto opts = seqan::MsaOptions<seqan::AminoAcid, seqan::Score<int>>();
-        opts.pairwiseAlignmentMethod = 2;
-        opts.bandWidth = 500;
-        opts.sc = scoringScheme;
-        opts.isDefaultPairwiseAlignment = false;
-        appendValue(opts.method, 0);
-        appendValue(opts.method, 1);
+            auto creads = read_set_t(tc.seqs.size());
 
-        std::vector<std::future<void>> tasks;
-        for (int t = 0; t < n_threads; ++t) {
-            tasks.emplace_back(std::async(std::launch::async, [&clusters, n_threads, &reads, opts, t] {
-                for (int i = t; i < clusters.size(); i += n_threads) {
-                    TStringSet sequences;
-                    seqan::StringSet<seqan::String<char>> sequenceNames;
-
-                    for (auto &seq : clusters[i].seqs) {
-                        appendValue(sequences, seqan::DnaString(reads[seq.seq_id].seq));
-                        appendValue(sequenceNames, seqan::String<char>(reads[seq.seq_id].header));
-                    }
-
-                    TAlignmentGraph alignmentGraph(sequences);
-                    globalMsaAlignment(alignmentGraph, sequences, sequenceNames, opts);
-                    
-                    std::cerr << i << "(" << clusters[i].seqs.size() << ") /" << clusters.size() << std::endl;
+            int i = 0;
+            for (auto &ts : tc.seqs) {
+                if (ts.rev) {
+                    reads[ts.seq_id].seq = reverse_complement(reads[ts.seq_id].seq);                
+                    std::reverse(reads[ts.seq_id].quality.begin(), reads[ts.seq_id].quality.end()); 
                 }
-            }));
-        }
 
-        for (auto &&task : tasks) {
-            task.get();
+                reads[ts.seq_id].header[0] = '>';
+                file_fa << reads[ts.seq_id].header << std::endl;
+                file_fa << reads[ts.seq_id].seq << std::endl;
+                reads[ts.seq_id].header[0] = '@';
+
+                creads[i] = reads[ts.seq_id];
+                i++;
+            }
+
+            file_fa.close();
+
+            read_set_t corrected_reads;
+            if (creads.size() > 5) {
+                std::stringstream mafft_call;
+                mafft_call << args["mafft-path"].as<std::string>("mafft");
+                mafft_call << " --quiet --ep 0.123 --thread ";
+                mafft_call << n_threads << " rattle_cluster.fa > rattle_cluster.aln";
+                system(mafft_call.str().c_str());
+
+                auto aln = read_fasta_file("rattle_cluster.aln");
+                // std::cout << aln.size() << " " << creads.size() << std::endl;
+                corrected_reads = correct_reads(creads, aln, 0.6, 3.0, 8);
+            } else {
+                corrected_reads = creads;
+            }
+
+            for (int i = 0; i < corrected_reads.size(); ++i) {
+                std::cout << corrected_reads[i].header << std::endl;
+                std::cout << corrected_reads[i].seq << std::endl;
+                std::cout << corrected_reads[i].ann << std::endl;
+                std::cout << corrected_reads[i].quality << std::endl;
+            }
+
+            cid++;
         }
         
         // std::cout << alignmentGraph << std::endl;
