@@ -1,6 +1,6 @@
 EXEC=rattle
 CC=g++
-CFLAGS=-Wall -Wextra -std=c++14 -g -pthread -I./seqan/include/
+CFLAGS=-Wall -Wextra -std=c++14 -g -pthread
 
 all: $(EXEC)
 

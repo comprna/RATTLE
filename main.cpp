@@ -11,14 +11,6 @@
 #include <stdio.h>
 #include <algorithm>
 
-#include <seqan/align.h>
-#include <seqan/graph_msa.h>
-
-// using namespace seqan;
-
-typedef seqan::StringSet<seqan::DnaString> TStringSet;
-typedef seqan::Graph<seqan::Alignment<seqan::StringSet<seqan::DnaString, seqan::Dependent<>>, void>> TAlignmentGraph;
-
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         std::cout<<phred_err('!')<<phred_err('"')<<phred_err('K')<<std::endl;
