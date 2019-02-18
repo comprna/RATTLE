@@ -24,12 +24,12 @@ Details on each command can be found below, but these are the most common comman
 
 * Cluster cDNA/RNA Nanopore reads at gene level
 ```
-$ ./rattle cluster -i reads.fq -o genes.out --fastq
+$ ./rattle cluster -i reads.fq -c genes.out --fastq
 ```
 
 * Cluster cDNA/RNA Nanopore reads at isoform level
 ```
-$ ./rattle cluster -i reads.fq -o transcripts.out --fastq --iso
+$ ./rattle cluster -i reads.fq -c transcripts.out --fastq --iso
 ```
 
 * View clustering summary (csv with read_id,cluster_id)
