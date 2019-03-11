@@ -10,14 +10,8 @@
 #include <fstream>
 #include <stdio.h>
 #include <algorithm>
-
-#include <seqan/align.h>
-#include <seqan/graph_msa.h>
-
-// using namespace seqan;
-
-typedef seqan::StringSet<seqan::DnaString> TStringSet;
-typedef seqan::Graph<seqan::Alignment<seqan::StringSet<seqan::DnaString, seqan::Dependent<>>, void>> TAlignmentGraph;
+#include <random>
+#include <chrono>
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -25,6 +19,8 @@ int main(int argc, char *argv[]) {
         std::cout << "Run with mode: ./rattle <cluster|cluster_summary|extract_clusters|correct>" << std::endl;
         return EXIT_FAILURE;
     }
+
+    std::default_random_engine r_eng{static_cast<long unsigned int>(std::chrono::high_resolution_clock::now().time_since_epoch().count())};
 
     char* mode = argv[1];
     if (!strcmp(mode, "cluster")) {
@@ -209,8 +205,10 @@ int main(int argc, char *argv[]) {
         for (auto &tc: clusters) {
             std::cerr << "Correcting cluster " << cid << " (" << tc.seqs.size() << ")" << std::endl;
 
+            // TODO: only write file if cluster size > min
             std::ofstream file_fa;
-            file_fa.open ("rattle_cluster.fa");
+            std::string fname = "rattle_cluster_" + random_str(r_eng, 30);
+            file_fa.open (fname + ".fa");
 
             auto creads = read_set_t(tc.seqs.size());
 
@@ -237,15 +235,18 @@ int main(int argc, char *argv[]) {
                 std::stringstream mafft_call;
                 mafft_call << args["mafft-path"].as<std::string>("mafft");
                 mafft_call << " --quiet --ep 0.123 --thread ";
-                mafft_call << n_threads << " rattle_cluster.fa > rattle_cluster.aln";
+                mafft_call << n_threads << " " << fname << ".fa > " << fname << ".aln";
                 system(mafft_call.str().c_str());
 
-                auto aln = read_fasta_file("rattle_cluster.aln");
+                auto aln = read_fasta_file(fname + ".aln");
                 // std::cout << aln.size() << " " << creads.size() << std::endl;
-                corrected_reads = correct_reads(creads, aln, 0.6, 3.0, 8);
+                corrected_reads = correct_reads(creads, aln, 0.3, 30.0, n_threads);
             } else {
                 corrected_reads = creads;
             }
+
+            std::remove((fname + ".fa").c_str());
+            std::remove((fname + ".aln").c_str());
 
             for (int i = 0; i < corrected_reads.size(); ++i) {
                 std::cout << corrected_reads[i].header << std::endl;

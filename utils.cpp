@@ -50,3 +50,13 @@ double var(std::vector<int> s) {
 
     return (ss - compensation*compensation/double(s.size())) / double(s.size()-1);
 }
+
+std::string random_str(std::default_random_engine eng, int sz) {
+    std::string str = std::string(sz, 'z');
+
+    for (int i = 0; i < sz; i++) {
+        str[i] = str_chars[std::uniform_int_distribution<>(0, str_chars.size()-1)(eng)];
+    }
+
+    return str;
+}
