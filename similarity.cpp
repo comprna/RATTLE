@@ -45,6 +45,7 @@ similarity_res_t calc_similarity(std::vector<kmer_match_t> common, int kmer_size
 
         // calc bases
         int bases = 0;
+        int hc_bases = 0;
         auto finalLIS = std::vector<kmer_match_t>();
         auto distances = std::vector<int>();
 
@@ -68,10 +69,18 @@ similarity_res_t calc_similarity(std::vector<kmer_match_t> common, int kmer_size
                     auto fls = finalLIS.size();
                     int dist = (finalLIS[fls-1].second - finalLIS[fls-2].second)-(finalLIS[fls-1].first - finalLIS[fls-2].first);
                     distances.push_back(dist);
+
+                    if (dist < 10) {
+                        hc_bases += kmer_size;
+                        if (ex > 0) {
+                            hc_bases -= ex;
+                        }
+                    }
                 }
             } else {
                 finalLIS.push_back(s[i]);
                 bases += kmer_size;
+                hc_bases += kmer_size;
             }
         }
 
@@ -80,6 +89,7 @@ similarity_res_t calc_similarity(std::vector<kmer_match_t> common, int kmer_size
         res.lis = finalLIS;
         res.llis = finalLIS.size();
         res.bases = bases;
+        res.hc_bases = hc_bases;
         res.distances = distances;
     }
 

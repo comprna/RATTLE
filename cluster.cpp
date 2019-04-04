@@ -7,8 +7,9 @@
 #include <mutex>
 #include <string>
 #include <iostream>
+#include <algorithm>
 
-cseq_t cluster_together(const read_set_t &reads, const std::vector<std::vector<kmer_t>> &kmers, const std::vector<std::vector<kmer_t>> &rev_kmers, const std::vector<kmer_bv_t> &bv_kmers, const std::vector<kmer_bv_t> &rev_bv_kmers, int i, int j, int kmer_size, double t_s, double t_v, double bv_threshold) {
+cseq_t cluster_together(const read_set_t &reads, const std::vector<std::vector<kmer_t>> &kmers, const std::vector<std::vector<kmer_t>> &rev_kmers, const std::vector<kmer_bv_t> &bv_kmers, const std::vector<kmer_bv_t> &rev_bv_kmers, int i, int j, int kmer_size, double t_s, double t_v, double bv_threshold, bool use_hc) {
     // filter by kmer bv intersection score
     auto bv_common = (bv_kmers[i] & bv_kmers[j]).count();
     auto rev_bv_common = (bv_kmers[i] & rev_bv_kmers[j]).count();
@@ -22,7 +23,12 @@ cseq_t cluster_together(const read_set_t &reads, const std::vector<std::vector<k
 
         // normalize scores
         double mn = std::min(reads[i].seq.size(), reads[j].seq.size());
-        double norm_score = double(sim.bases)/mn;
+        double norm_score;
+        if (use_hc) {
+            norm_score = double(sim.hc_bases)/mn;
+        } else {
+            norm_score = double(sim.bases)/mn;
+        }
 
         if (norm_score >= t_s) {
             // normal strand
@@ -38,7 +44,12 @@ cseq_t cluster_together(const read_set_t &reads, const std::vector<std::vector<k
 
         // normalize scores
         double mn = std::min(reads[i].seq.size(), reads[j].seq.size());
-        double rev_norm_score = double(rev_sim.bases)/mn;
+        double rev_norm_score;
+        if (use_hc) {
+            rev_norm_score = double(rev_sim.hc_bases)/mn;
+        } else {
+            rev_norm_score = double(rev_sim.bases)/mn;
+        }
 
         if (rev_norm_score >= t_s) {
             // reverse strand
@@ -51,7 +62,28 @@ cseq_t cluster_together(const read_set_t &reads, const std::vector<std::vector<k
     return cseq_t{-1, false};
 }
 
-cluster_set_t cluster_reads(const read_set_t &reads, int kmer_size, double t_s, double t_v, double bv_threshold, double min_bv_threshold, double bv_falloff, int min_reads_cluster, int n_threads) {
+cseq_t get_main_seq(std::vector<cseq_t> &seqs, const read_set_t &reads, double repr_percentile) {
+    cseq_t old = seqs[0];
+
+    std::stable_sort(seqs.begin(), seqs.end(), [&reads](cseq_t a, cseq_t b) {
+        return reads[a.seq_id].seq.size() > reads[b.seq_id].seq.size();
+    });
+
+    int nsid = seqs.size() * repr_percentile;
+    cseq_t ns = seqs[nsid];
+    while (ns.rev != old.rev && nsid < seqs.size()-1) {
+        nsid++;
+        ns = seqs[nsid];
+    }
+
+    if (nsid == seqs.size() - 1) {
+        return old;
+    }
+
+    return ns;
+}
+
+cluster_set_t cluster_reads(const read_set_t &reads, int kmer_size, double t_s, double t_v, double bv_threshold, double min_bv_threshold, double bv_falloff, int min_reads_cluster, bool use_hc, double repr_percentile, int n_threads) {
     cluster_set_t clusters;
     std::mutex mu;
     auto already_clustered = std::vector<bool>(reads.size(), false);
@@ -97,14 +129,14 @@ cluster_set_t cluster_reads(const read_set_t &reads, int kmer_size, double t_s, 
         already_clustered[i] = true;
 
         for (int t = 0; t < n_threads; ++t) {
-            tasks.emplace_back(std::async(std::launch::async, [t, i, t_v, t_s, &mu, &kmers, &rev_kmers, &bv_kmers, &rev_bv_kmers, &reads, n_threads, kmer_size, &already_clustered, &cseqs, bv_threshold] {
+            tasks.emplace_back(std::async(std::launch::async, [t, i, t_v, t_s, &mu, &kmers, &rev_kmers, &bv_kmers, &rev_bv_kmers, &reads, n_threads, kmer_size, &already_clustered, &cseqs, bv_threshold, use_hc] {
                 for (int j = i+1+t; j < reads.size(); j+=n_threads) {
                     if (already_clustered[j]) {
                         continue;
                     }
 
                     // CHECK TODO: Try saving cseqs to a local thread vector and then lock at the end
-                    auto sinfo = cluster_together(reads, kmers, rev_kmers, bv_kmers, rev_bv_kmers, i, j, kmer_size, t_s, t_v, bv_threshold);
+                    auto sinfo = cluster_together(reads, kmers, rev_kmers, bv_kmers, rev_bv_kmers, i, j, kmer_size, t_s, t_v, bv_threshold, use_hc);
                     if (sinfo.seq_id != -1) {
                         std::lock_guard<std::mutex> lock(mu);
                         already_clustered[sinfo.seq_id] = true;
@@ -120,7 +152,7 @@ cluster_set_t cluster_reads(const read_set_t &reads, int kmer_size, double t_s, 
 
         // create cluster
         cluster_t cluster;
-        cluster.main_seq = cseq_t{i, false};
+        cluster.main_seq = get_main_seq(cseqs, reads, repr_percentile); //cseq_t{i, false};
         cluster.seqs = cseqs;
         
         initial_clusters.push_back(cluster);
@@ -148,14 +180,14 @@ cluster_set_t cluster_reads(const read_set_t &reads, int kmer_size, double t_s, 
             // NOTE: We are storing cluster IDs, not read IDs!!!!
             clusters_to_merge.push_back(cseq_t{i, false});
             for (int t = 0; t < n_threads; ++t) {
-                tasks.emplace_back(std::async(std::launch::async, [t, i, t_v, t_s, &clusters, &mu, &kmers, &rev_kmers, &bv_kmers, &rev_bv_kmers, &reads, n_threads, kmer_size, &already_clustered, &clusters_to_merge, current_bv_threshold] {
+                tasks.emplace_back(std::async(std::launch::async, [t, i, t_v, t_s, &clusters, &mu, &kmers, &rev_kmers, &bv_kmers, &rev_bv_kmers, &reads, n_threads, kmer_size, &already_clustered, &clusters_to_merge, current_bv_threshold, use_hc] {
                     for (int j = i+1+t; j < clusters.size(); j+=n_threads) {
                         if (already_clustered[j]) {
                             continue;
                         }
 
                         // CHECK TODO: Try saving clusters_to_merge to a local thread vector and then lock at the end
-                        auto sinfo = cluster_together(reads, kmers, rev_kmers, bv_kmers, rev_bv_kmers, clusters[i].main_seq.seq_id, clusters[j].main_seq.seq_id, kmer_size, t_s, t_v, current_bv_threshold);
+                        auto sinfo = cluster_together(reads, kmers, rev_kmers, bv_kmers, rev_bv_kmers, clusters[i].main_seq.seq_id, clusters[j].main_seq.seq_id, kmer_size, t_s, t_v, current_bv_threshold, use_hc);
                         if (sinfo.seq_id != -1) {
                             std::lock_guard<std::mutex> lock(mu);
                             already_clustered[j] = true;
@@ -173,16 +205,16 @@ cluster_set_t cluster_reads(const read_set_t &reads, int kmer_size, double t_s, 
             cluster_t cluster;
 
             // get main seq of new cluster
-            cseq_t new_main_seq = clusters_to_merge[0];
-            for (auto c : clusters_to_merge) {
-                auto c_a = clusters[new_main_seq.seq_id];
-                auto c_b = clusters[c.seq_id];
+            cseq_t original_cluster = clusters_to_merge[0];
+            // for (auto c : clusters_to_merge) {
+            //     auto c_a = clusters[new_main_seq.seq_id];
+            //     auto c_b = clusters[c.seq_id];
 
-                if (reads[c_b.main_seq.seq_id].seq.size() > reads[c_a.main_seq.seq_id].seq.size()) {
-                    new_main_seq = c;
-                }
-            }
-            cluster.main_seq = clusters[new_main_seq.seq_id].main_seq;
+            //     if (reads[c_b.main_seq.seq_id].seq.size() > reads[c_a.main_seq.seq_id].seq.size()) {
+            //         new_main_seq = c;
+            //     }
+            // }
+            // cluster.main_seq = clusters[new_main_seq.seq_id].main_seq;
 
             // merge all clusters
             for (auto c : clusters_to_merge) {
@@ -190,13 +222,15 @@ cluster_set_t cluster_reads(const read_set_t &reads, int kmer_size, double t_s, 
                 auto old_cluster = clusters[c.seq_id];
 
                 for (auto s : old_cluster.seqs) {
-                    if (c.rev != new_main_seq.rev) {
+                    if (c.rev != original_cluster.rev) {
                         s.rev = !s.rev;
                     }
 
                     cluster.seqs.push_back(s);
                 }
             }
+
+            cluster.main_seq = get_main_seq(cluster.seqs, reads, repr_percentile);
             tmp_clusters.push_back(cluster);
             // if (cseqs.size() >= min_reads_cluster) {
             // }

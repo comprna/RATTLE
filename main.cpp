@@ -56,7 +56,9 @@ int main(int argc, char *argv[]) {
             { "bv_falloff", {"-f", "--bv-falloff"},
             "falloff value for the bitvector threshold for each iteration (default: 0.05)", 1},  
             { "min_reads_cluster", {"-r", "--min-reads-cluster"},
-            "minimum number of reads per cluster (default: 0)", 1},  
+            "minimum number of reads per cluster (default: 0)", 1},
+            { "repr_percentile", {"-p", "--repr-percentile"},
+            "cluster representative percentile (default: 0.5)", 1},  
         }};
 
         argagg::parser_results args;
@@ -103,14 +105,15 @@ int main(int argc, char *argv[]) {
         double bv_falloff = args["bv_falloff"].as<double>(0.05);
 
         int min_reads_cluster = args["min_reads_cluster"].as<int>(0);
+        double repr_percentile = args["repr_percentile"].as<double>(0.5);
 
         sort_read_set(reads);
 
-        auto gene_clusters = cluster_reads(reads, kmer_size, t_s, t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, n_threads);
+        auto gene_clusters = cluster_reads(reads, kmer_size, t_s, t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, true, repr_percentile, n_threads);
         std::ofstream out_file(args["clusters"].as<std::string>("clusters.out"), std::ofstream::binary);
         
         std::cerr << "Gene clustering done" << std::endl;
-        std::cerr << gene_clusters.size() << "gene clusters found" << std::endl;
+        std::cerr << gene_clusters.size() << " gene clusters found" << std::endl;
         if (!args["iso"]) {
             hps::to_stream(gene_clusters, out_file);
             return EXIT_SUCCESS;
@@ -134,7 +137,7 @@ int main(int argc, char *argv[]) {
             }
 
             // cluster gene reads & save new iso clusters
-            auto iso_clusters_tmp = cluster_reads(gene_reads, iso_kmer_size, iso_t_s, iso_t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, n_threads);
+            auto iso_clusters_tmp = cluster_reads(gene_reads, iso_kmer_size, iso_t_s, iso_t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, false, repr_percentile, n_threads);
             for (auto &ic : iso_clusters_tmp) {
                 cluster_t iso_cluster;
                 iso_cluster.main_seq = cseq_t{c.seqs[ic.main_seq.seq_id].seq_id, ic.main_seq.rev};
@@ -202,7 +205,7 @@ int main(int argc, char *argv[]) {
         auto clusters = hps::from_stream<cluster_set_t>(in_file);
         int cid = 0;
 
-        for (auto &tc: clusters) {
+        for (auto &tc: clusters) {           
             std::cerr << "Correcting cluster " << cid << " (" << tc.seqs.size() << ")" << std::endl;
 
             // TODO: only write file if cluster size > min
@@ -329,6 +332,8 @@ int main(int argc, char *argv[]) {
             "clusters file (required)", 1},
             { "output", {"-o", "--output-folder"},
             "output folder for fastx files (default: .)", 1},
+            { "minreads", {"-m", "--min-reads"},
+            "min reads per cluster to save it into a file", 0},
             { "fastq", {"--fastq"},
             "whether input and output should be in fastq format (instead of fasta)", 0},
         }};
@@ -372,44 +377,48 @@ int main(int argc, char *argv[]) {
 
         std::ifstream in_file(args["clusters"].as<std::string>(), std::ifstream::binary);
         auto clusters = hps::from_stream<cluster_set_t>(in_file);
+        int min_reads = args["minreads"].as<int>(0);
 
         int cid = 0;
         for (auto c : clusters) {
-            std::ostringstream ss_fn;
-            if (args["output"]) {
-                ss_fn << args["output"].as<std::string>();
-                ss_fn << "/";
-            }
-
-            ss_fn << "cluster_";
-            ss_fn << cid;
-
-            if (args["fastq"]) {
-                ss_fn << ".fq";
-            } else {
-                ss_fn << ".fa";
-            }
-
-            std::ofstream cfile;
-            cfile.open(ss_fn.str());
-            
-            for (auto seq : c.seqs) {
-                // std::cout << reads[seq.seq_id].header << "," << cid << std::endl;
-                cfile << reads[seq.seq_id].header << "\n";
-                if (seq.rev) {
-                    cfile << reverse_complement(reads[seq.seq_id].seq) << "\n";
-                } else {
-                    cfile << reads[seq.seq_id].seq << "\n";
+            if (c.seqs.size() > min_reads) {
+                std::ostringstream ss_fn;
+                if (args["output"]) {
+                    ss_fn << args["output"].as<std::string>();
+                    ss_fn << "/";
                 }
+
+                ss_fn << "cluster_";
+                ss_fn << cid;
 
                 if (args["fastq"]) {
-                    cfile << reads[seq.seq_id].ann << "\n";
-                    cfile << reads[seq.seq_id].quality << "\n";
+                    ss_fn << ".fq";
+                } else {
+                    ss_fn << ".fa";
                 }
+
+                std::ofstream cfile;
+                cfile.open(ss_fn.str());
+                
+                for (auto seq : c.seqs) {
+                    // std::cout << reads[seq.seq_id].header << "," << cid << std::endl;
+                    cfile << reads[seq.seq_id].header << "\n";
+                    if (seq.rev) {
+                        cfile << reverse_complement(reads[seq.seq_id].seq) << "\n";
+                    } else {
+                        cfile << reads[seq.seq_id].seq << "\n";
+                    }
+
+                    if (args["fastq"]) {
+                        cfile << reads[seq.seq_id].ann << "\n";
+                        cfile << reads[seq.seq_id].quality << "\n";
+                    }
+                }
+                
+                cfile.close();
             }
 
             ++cid;
-            cfile.close();
         }
     } else {
         std::cerr << "Unknown mode. More info" << std::endl;

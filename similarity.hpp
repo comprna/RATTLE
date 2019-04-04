@@ -8,6 +8,7 @@ struct similarity_res_t {
     std::vector<std::pair<int,int>> lis;
     int llis;
     int bases;
+    int hc_bases; // high confidence bases (bases with low dist)
     std::vector<int> distances;
 };
 
