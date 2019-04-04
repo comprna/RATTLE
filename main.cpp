@@ -333,7 +333,7 @@ int main(int argc, char *argv[]) {
             { "output", {"-o", "--output-folder"},
             "output folder for fastx files (default: .)", 1},
             { "minreads", {"-m", "--min-reads"},
-            "min reads per cluster to save it into a file", 0},
+            "min reads per cluster to save it into a file", 1},
             { "fastq", {"--fastq"},
             "whether input and output should be in fastq format (instead of fasta)", 0},
         }};
