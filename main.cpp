@@ -162,6 +162,8 @@ int main(int argc, char *argv[]) {
             "input fasta/fastq file (required)", 1},
             { "clusters", {"-c", "--clusters"},
             "clusters file (required)", 1},
+            { "split", {"-s", "--split"},
+            "split clusters into sub-clusters of size s for msa (default: 100)", 1},
             { "mafft-path", {"--mafft-path"},
             "path to mafft (default: mafft)", 1},
             { "threads", {"-t", "--threads"},
@@ -204,58 +206,68 @@ int main(int argc, char *argv[]) {
         std::ifstream in_file(args["clusters"].as<std::string>(), std::ifstream::binary);
         auto clusters = hps::from_stream<cluster_set_t>(in_file);
         int cid = 0;
+        int split = args["split"].as<int>(100);
+
 
         for (auto &tc: clusters) {           
             std::cerr << "Correcting cluster " << cid << " (" << tc.seqs.size() << ")" << std::endl;
 
-            // TODO: only write file if cluster size > min
-            std::ofstream file_fa;
-            std::string fname = "rattle_cluster_" + random_str(r_eng, 30);
-            file_fa.open (fname + ".fa");
+            int n_files = (tc.seqs.size() + split - 1) / split; // ceil(tc.seqs.size / split)
 
-            auto creads = read_set_t(tc.seqs.size());
+            for (int nf = 0; nf < n_files; nf++) {
+                std::cerr << "---> " << nf << std::endl;
 
-            int i = 0;
-            for (auto &ts : tc.seqs) {
-                if (ts.rev) {
-                    reads[ts.seq_id].seq = reverse_complement(reads[ts.seq_id].seq);                
-                    std::reverse(reads[ts.seq_id].quality.begin(), reads[ts.seq_id].quality.end()); 
+                std::ofstream file_fa;
+                std::string fname = "rattle_cluster_" + random_str(r_eng, 30);
+                file_fa.open (fname + ".fa");
+
+                int nreads_in_cluster = (tc.seqs.size() + n_files - 1 - nf) / n_files;
+                auto creads = read_set_t(nreads_in_cluster);
+
+                int i = 0;
+                for (int j = nf; j < tc.seqs.size(); j += n_files) {
+                    auto ts = tc.seqs[j];
+
+                    if (ts.rev) {
+                        reads[ts.seq_id].seq = reverse_complement(reads[ts.seq_id].seq);                
+                        std::reverse(reads[ts.seq_id].quality.begin(), reads[ts.seq_id].quality.end()); 
+                    }
+
+                    reads[ts.seq_id].header[0] = '>';
+                    file_fa << reads[ts.seq_id].header << std::endl;
+                    file_fa << reads[ts.seq_id].seq << std::endl;
+                    reads[ts.seq_id].header[0] = '@';
+
+                    creads[i] = reads[ts.seq_id];
+                    i++;
                 }
 
-                reads[ts.seq_id].header[0] = '>';
-                file_fa << reads[ts.seq_id].header << std::endl;
-                file_fa << reads[ts.seq_id].seq << std::endl;
-                reads[ts.seq_id].header[0] = '@';
+                file_fa.close();
 
-                creads[i] = reads[ts.seq_id];
-                i++;
-            }
+                read_set_t corrected_reads;
+                if (creads.size() > 5) {
+                    std::stringstream mafft_call;
+                    mafft_call << args["mafft-path"].as<std::string>("mafft");
+                    mafft_call << " --quiet --ep 0.123 --thread ";
+                    mafft_call << n_threads << " " << fname << ".fa > " << fname << ".aln";
+                    system(mafft_call.str().c_str());
 
-            file_fa.close();
+                    auto aln = read_fasta_file(fname + ".aln");
+                    // std::cout << aln.size() << " " << creads.size() << std::endl;
+                    corrected_reads = correct_reads(creads, aln, 0.3, 30.0, n_threads);
+                } else {
+                    corrected_reads = creads;
+                }
 
-            read_set_t corrected_reads;
-            if (creads.size() > 5) {
-                std::stringstream mafft_call;
-                mafft_call << args["mafft-path"].as<std::string>("mafft");
-                mafft_call << " --quiet --ep 0.123 --thread ";
-                mafft_call << n_threads << " " << fname << ".fa > " << fname << ".aln";
-                system(mafft_call.str().c_str());
+                std::remove((fname + ".fa").c_str());
+                std::remove((fname + ".aln").c_str());
 
-                auto aln = read_fasta_file(fname + ".aln");
-                // std::cout << aln.size() << " " << creads.size() << std::endl;
-                corrected_reads = correct_reads(creads, aln, 0.3, 30.0, n_threads);
-            } else {
-                corrected_reads = creads;
-            }
-
-            std::remove((fname + ".fa").c_str());
-            std::remove((fname + ".aln").c_str());
-
-            for (int i = 0; i < corrected_reads.size(); ++i) {
-                std::cout << corrected_reads[i].header << std::endl;
-                std::cout << corrected_reads[i].seq << std::endl;
-                std::cout << corrected_reads[i].ann << std::endl;
-                std::cout << corrected_reads[i].quality << std::endl;
+                for (int i = 0; i < corrected_reads.size(); ++i) {
+                    std::cout << corrected_reads[i].header << std::endl;
+                    std::cout << corrected_reads[i].seq << std::endl;
+                    std::cout << corrected_reads[i].ann << std::endl;
+                    std::cout << corrected_reads[i].quality << std::endl;
+                }
             }
 
             cid++;
