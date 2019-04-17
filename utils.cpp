@@ -37,6 +37,8 @@ double var(std::vector<int> s) {
 	// the sample variance: Analysis and recommendations" by Chan, Tony F., Gene H. Golub,
     // and Randall J. LeVeque.
     
+    if (s.size() == 0) return 0;
+    
     double ss = 0.0;
     double compensation = 0.0;
 
