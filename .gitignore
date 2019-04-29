@@ -1,4 +1,11 @@
+rattle
 experiment*
 test*
 mafft*
 python*
+*.o
+*.sh
+*.py
+.vscode/
+.Rhistory
+results.*
