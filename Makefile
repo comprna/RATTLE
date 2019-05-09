@@ -1,11 +1,12 @@
 EXEC=rattle
 CC=g++
 CFLAGS=-Wall -Wextra -std=c++14 -O3 -pthread
+LIBS=-Ispoa/include
 
 all: $(EXEC)
 
 $(EXEC): main.cpp fasta.o cluster.o utils.o kmer.o similarity.o correct.o
-	$(CC) -o $(EXEC) $(CFLAGS) main.cpp fasta.o cluster.o utils.o kmer.o similarity.o correct.o
+	$(CC) -o $(EXEC) $(CFLAGS) $(LIBS) main.cpp fasta.o cluster.o utils.o kmer.o similarity.o correct.o spoa/build/lib/libspoa.a
 
 utils.o: utils.hpp utils.cpp
 	$(CC) -c $(CFLAGS) utils.cpp

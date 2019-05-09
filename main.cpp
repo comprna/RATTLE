@@ -4,6 +4,7 @@
 #include "correct.hpp"
 #include "argagg.hpp"
 #include "hps/src/hps.h"
+#include "spoa/spoa.hpp"
 
 #include <iostream>
 #include <future>
@@ -217,12 +218,13 @@ int main(int argc, char *argv[]) {
             for (int nf = 0; nf < n_files; nf++) {
                 std::cerr << "---> " << nf << std::endl;
 
-                std::ofstream file_fa;
-                std::string fname = "rattle_cluster_" + random_str(r_eng, 30);
-                file_fa.open (fname + ".fa");
+                auto alignment_engine = spoa::createAlignmentEngine(static_cast<spoa::AlignmentType>(0),
+                    5, -4, -8, -6);
 
+                auto graph = spoa::createGraph();
                 int nreads_in_cluster = (tc.seqs.size() + n_files - 1 - nf) / n_files;
                 auto creads = read_set_t(nreads_in_cluster);
+                read_set_t corrected_reads;
 
                 int i = 0;
                 for (int j = nf; j < tc.seqs.size(); j += n_files) {
@@ -233,34 +235,30 @@ int main(int argc, char *argv[]) {
                         std::reverse(reads[ts.seq_id].quality.begin(), reads[ts.seq_id].quality.end()); 
                     }
 
-                    reads[ts.seq_id].header[0] = '>';
-                    file_fa << reads[ts.seq_id].header << std::endl;
-                    file_fa << reads[ts.seq_id].seq << std::endl;
-                    reads[ts.seq_id].header[0] = '@';
-
                     creads[i] = reads[ts.seq_id];
                     i++;
                 }
 
-                file_fa.close();
-
-                read_set_t corrected_reads;
                 if (creads.size() > 5) {
-                    std::stringstream mafft_call;
-                    mafft_call << args["mafft-path"].as<std::string>("mafft");
-                    mafft_call << " --quiet --ep 0.123 --thread ";
-                    mafft_call << n_threads << " " << fname << ".fa > " << fname << ".aln";
-                    system(mafft_call.str().c_str());
+                    for (int j = 0; j < creads.size(); ++j) {
+                        auto alignment = alignment_engine->align(creads[j].seq, graph);
+                        graph->add_alignment(alignment, creads[j].seq);
+                    }
+                    
+                    int i = 0;
+                    std::vector<std::string> msa;
+                    graph->generate_multiple_sequence_alignment(msa);
 
-                    auto aln = read_fasta_file(fname + ".aln");
-                    // std::cout << aln.size() << " " << creads.size() << std::endl;
-                    corrected_reads = correct_reads(creads, aln, 0.3, 30.0, n_threads);
+                    read_set_t aln_reads = read_set_t(creads.size());
+                    for (const auto& it: msa) {
+                        aln_reads[i] = read_t{creads[i].header, it, "", ""};
+                        i++;
+                    }
+
+                    corrected_reads = correct_reads(creads, aln_reads, 0.3, 30.0, n_threads);
                 } else {
                     corrected_reads = creads;
                 }
-
-                std::remove((fname + ".fa").c_str());
-                std::remove((fname + ".aln").c_str());
 
                 for (int i = 0; i < corrected_reads.size(); ++i) {
                     std::cout << corrected_reads[i].header << std::endl;
