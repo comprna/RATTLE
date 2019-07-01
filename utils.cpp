@@ -36,7 +36,7 @@ double var(std::vector<int> s) {
     // corrected two-pass algorithm (1.7), from "Algorithms for computing
 	// the sample variance: Analysis and recommendations" by Chan, Tony F., Gene H. Golub,
     // and Randall J. LeVeque.
-    
+
     if (s.size() == 0) return 0;
     
     double ss = 0.0;
@@ -61,4 +61,21 @@ std::string random_str(std::default_random_engine eng, int sz) {
     }
 
     return str;
+}
+
+void print_progress(int a, int b) {
+    double progress = double(a)/double(b);
+    int width = 80;
+
+    std::cerr << "[";
+    int pos = width * progress;
+    
+    for (int i = 0; i < width; ++i) {
+        if (i < pos) std::cerr << "=";
+        else if (i == pos) std::cerr << ">";
+        else std::cerr << " ";
+    }
+
+    std::cerr << "] " << a << "/" << b << " (" << progress * 100.0 << "%)" << "\r";
+    std::cerr.flush();
 }

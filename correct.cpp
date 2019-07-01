@@ -7,7 +7,7 @@
 #include "correct.hpp"
 #include "utils.hpp"
 
-read_set_t correct_reads(const read_set_t &reads, const read_set_t &aln, double min_occ, double err_ratio, int n_threads) {
+corrected_pack_t correct_reads(const read_set_t &reads, const read_set_t &aln, double min_occ, double gap_occ, double err_ratio, int n_threads) {
     // generate consensus vector
     auto nt_info = std::vector<map_nt_info_t>(aln[0].seq.size());
     for (int i = 0; i < nt_info.size(); i++) {
@@ -20,7 +20,7 @@ read_set_t correct_reads(const read_set_t &reads, const read_set_t &aln, double 
     }
 
     std::mutex mu;
-    
+
     std::vector<std::future<void>> tasks;
     for (int t = 0; t < n_threads; ++t) {
         tasks.emplace_back(std::async(std::launch::async, [t, &reads, &aln, n_threads, &mu, &nt_info] {
@@ -100,7 +100,7 @@ read_set_t correct_reads(const read_set_t &reads, const read_set_t &aln, double 
 
     tasks.clear();
     for (int t = 0; t < n_threads; ++t) {
-        tasks.emplace_back(std::async(std::launch::async, [t, &reads, &aln, n_threads, &mu, &nt_info, &consensus_nt, min_occ, err_ratio, &corrected_reads] {
+        tasks.emplace_back(std::async(std::launch::async, [t, &reads, &aln, n_threads, &mu, &nt_info, &consensus_nt, min_occ, gap_occ, err_ratio, &corrected_reads] {
             for (int i = t; i < reads.size(); i+=n_threads) {
                 auto read_aln = aln[i];
                 int seq_pos = -1;
@@ -133,7 +133,7 @@ read_set_t correct_reads(const read_set_t &reads, const read_set_t &aln, double 
                                 res_read += cnt;
                             } else {
                                 // nt 2 gap (delete possible insertion)
-                                if (occ_ratio >= min_occ) {
+                                if (occ_ratio >= gap_occ) {
                                     res_read += cnt;
                                     n2g++;
                                 } else {
@@ -143,7 +143,8 @@ read_set_t correct_reads(const read_set_t &reads, const read_set_t &aln, double 
                             }
                         } else {
                             if (nt == '-') {
-                                if (occ_ratio >= min_occ) {
+                                // gap 2 nt (fix possible deletion)
+                                if (occ_ratio >= gap_occ) {
                                     res_read += cnt;
                                     res_qt += phred_symbol(consensus_info.err);
                                     g2n++;
@@ -185,5 +186,6 @@ read_set_t correct_reads(const read_set_t &reads, const read_set_t &aln, double 
         task.get();
     }
 
-    return corrected_reads;
+    consensus_nt.erase(std::remove(consensus_nt.begin(), consensus_nt.end(), '-'), consensus_nt.end());
+    return corrected_pack_t{-1, std::string(consensus_nt.begin(), consensus_nt.end()), corrected_reads};
 }
