@@ -30,3 +30,5 @@ clean:
 	rm -f *.o
 	rm -f $(EXEC)
 	rm -f *log.txt
+
+.PHONY: all clean
