@@ -21,5 +21,6 @@ std::string reverse_complement(std::string seq);
 double mean(std::vector<int> s);
 double var(std::vector<int> s);
 std::string random_str(std::default_random_engine eng, int sz);
+void print_progress(int a, int b);
 
 #endif
