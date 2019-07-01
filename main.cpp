@@ -13,10 +13,10 @@
 #include <algorithm>
 #include <random>
 #include <chrono>
+#include <queue>
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        std::cout<<phred_err('!')<<phred_err('"')<<phred_err('K')<<std::endl;
         std::cout << "Run with mode: ./rattle <cluster|cluster_summary|extract_clusters|correct>" << std::endl;
         return EXIT_FAILURE;
     }
@@ -32,8 +32,8 @@ int main(int argc, char *argv[]) {
             "input fasta/fastq file (required)", 1},
             { "fastq", {"--fastq"},
             "whether input and output should be in fastq format (instead of fasta)", 0},
-            { "clusters", {"-c", "--clusters"},
-            "clusters file (default: clusters.out)", 1},
+            { "output", {"-o", "--output"},
+            "output folder (default: .)", 1},
             { "threads", {"-t", "--threads"},
             "number of threads to use (default: 1)", 1},
             { "kmer_size", {"-k", "--kmer-size"},
@@ -109,9 +109,10 @@ int main(int argc, char *argv[]) {
         double repr_percentile = args["repr_percentile"].as<double>(0.5);
 
         sort_read_set(reads);
+        std::cerr << "Done" << std::endl;
 
         auto gene_clusters = cluster_reads(reads, kmer_size, t_s, t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, true, repr_percentile, n_threads);
-        std::ofstream out_file(args["clusters"].as<std::string>("clusters.out"), std::ofstream::binary);
+        std::ofstream out_file(args["output"].as<std::string>(".") + "/clusters.out", std::ofstream::binary);
         
         std::cerr << "Gene clustering done" << std::endl;
         std::cerr << gene_clusters.size() << " gene clusters found" << std::endl;
@@ -124,7 +125,7 @@ int main(int argc, char *argv[]) {
         cluster_set_t iso_clusters;
         int i = 0;
         for (auto &c : gene_clusters) {
-            std::cerr << i << "gene cluster to isoform clusters" << std::endl;
+            std::cerr << i << " gene cluster to isoform clusters" << std::endl;
 
             // sort gene cluster seqs by size
             std::stable_sort(c.seqs.begin(), c.seqs.end(), [&reads](cseq_t a, cseq_t b) {
@@ -163,6 +164,12 @@ int main(int argc, char *argv[]) {
             "input fasta/fastq file (required)", 1},
             { "clusters", {"-c", "--clusters"},
             "clusters file (required)", 1},
+            { "output", {"-o", "--output"},
+            "output folder (default: .)", 1},
+            { "gap-occ", {"-g", "--gap-occ"},
+            "gap-occ (default: 0.6)", 1},
+            { "min-occ", {"-m", "--min-occ"},
+            "min-occ (default: 0.3)", 1},
             { "split", {"-s", "--split"},
             "split clusters into sub-clusters of size s for msa (default: 100)", 1},
             { "mafft-path", {"--mafft-path"},
@@ -202,29 +209,32 @@ int main(int argc, char *argv[]) {
         read_set_t reads = read_fastq_file(args["input"]);
 
         sort_read_set(reads);
+        std::cerr << "Done" << std::endl;
 
         int n_threads = args["threads"].as<int>(1);
         std::ifstream in_file(args["clusters"].as<std::string>(), std::ifstream::binary);
         auto clusters = hps::from_stream<cluster_set_t>(in_file);
         int cid = 0;
         int split = args["split"].as<int>(100);
+        double min_occ = args["min-occ"].as<double>(0.3);
+        double gap_occ = args["gap-occ"].as<double>(0.6);
 
+        std::queue<pack_to_correct_t> pending_clusters;
+        int corrected = 0;
+        int total_reads = 0;
+
+        std::ofstream clusters_file;
+        clusters_file.open(args["output"].as<std::string>(".") + "/corrected.fq");
+
+        std::ofstream consensi_file;
+        consensi_file.open(args["output"].as<std::string>(".") + "/consensi.fa");
 
         for (auto &tc: clusters) {           
-            std::cerr << "Correcting cluster " << cid << " (" << tc.seqs.size() << ")" << std::endl;
-
             int n_files = (tc.seqs.size() + split - 1) / split; // ceil(tc.seqs.size / split)
 
             for (int nf = 0; nf < n_files; nf++) {
-                std::cerr << "---> " << nf << std::endl;
-
-                auto alignment_engine = spoa::createAlignmentEngine(static_cast<spoa::AlignmentType>(0),
-                    5, -4, -8, -6);
-
-                auto graph = spoa::createGraph();
                 int nreads_in_cluster = (tc.seqs.size() + n_files - 1 - nf) / n_files;
                 auto creads = read_set_t(nreads_in_cluster);
-                read_set_t corrected_reads;
 
                 int i = 0;
                 for (int j = nf; j < tc.seqs.size(); j += n_files) {
@@ -237,9 +247,50 @@ int main(int argc, char *argv[]) {
 
                     creads[i] = reads[ts.seq_id];
                     i++;
+                    total_reads++;
                 }
 
                 if (creads.size() > 5) {
+                    pending_clusters.push(pack_to_correct_t{cid, creads});
+                } else {
+                    for (int i = 0; i < creads.size(); ++i) {
+                        corrected++;
+                        clusters_file << creads[i].header << std::endl;
+                        clusters_file << creads[i].seq << std::endl;
+                        clusters_file << creads[i].ann << std::endl;
+                        clusters_file << creads[i].quality << std::endl;
+                    }
+                }
+            }
+
+            cid++;
+        }
+
+        std::mutex mu;
+        std::vector<std::future<void>> tasks;
+        auto consensi = std::vector<read_set_t>(clusters.size());
+
+        for (int t = 0; t < n_threads; ++t) {
+            tasks.emplace_back(std::async(std::launch::async, [t, &consensi, &clusters_file, &consensi_file, &pending_clusters, &mu, &corrected, &total_reads, gap_occ, min_occ, n_threads] {
+                while (true) {
+                    pack_to_correct_t pack;
+
+                    {
+                        std::lock_guard<std::mutex> lock(mu);
+                        if (pending_clusters.empty()) break;
+
+                        pack = pending_clusters.front();
+                        pending_clusters.pop();
+
+                        print_progress(corrected, total_reads);
+                    }
+
+                    auto creads = pack.reads;
+                    auto alignment_engine = spoa::createAlignmentEngine(static_cast<spoa::AlignmentType>(0),
+                    5, -4, -8, -6);
+
+                    auto graph = spoa::createGraph();
+
                     for (int j = 0; j < creads.size(); ++j) {
                         auto alignment = alignment_engine->align(creads[j].seq, graph);
                         graph->add_alignment(alignment, creads[j].seq);
@@ -255,21 +306,61 @@ int main(int argc, char *argv[]) {
                         i++;
                     }
 
-                    corrected_reads = correct_reads(creads, aln_reads, 0.3, 30.0, n_threads);
-                } else {
-                    corrected_reads = creads;
+                    auto corrected_reads_pack = correct_reads(creads, aln_reads, min_occ, gap_occ, 30.0, 1);
+                    auto corrected_reads = corrected_reads_pack.reads;
+                    {
+                        std::lock_guard<std::mutex> lock(mu);
+                        for (int i = 0; i < corrected_reads.size(); ++i) {
+                            clusters_file << corrected_reads[i].header << std::endl;
+                            clusters_file << corrected_reads[i].seq << std::endl;
+                            clusters_file << corrected_reads[i].ann << std::endl;
+                            clusters_file << corrected_reads[i].quality << std::endl;
+                        }
+                        corrected+=creads.size();
+                        consensi[pack.original_cluster_id].push_back(read_t{">r", corrected_reads_pack.consensus, "", ""});
+                    }
                 }
+            }));
+        }
 
-                for (int i = 0; i < corrected_reads.size(); ++i) {
-                    std::cout << corrected_reads[i].header << std::endl;
-                    std::cout << corrected_reads[i].seq << std::endl;
-                    std::cout << corrected_reads[i].ann << std::endl;
-                    std::cout << corrected_reads[i].quality << std::endl;
+        for (auto &&task : tasks) {
+            task.get();
+        }
+        
+        print_progress(corrected, total_reads);
+        std::cerr << std::endl;
+
+        std::cerr << "Generating consensi..." << std::endl;
+        cid = 0;
+        for (const auto& it: consensi) {
+            if (it.size() > 0) consensi_file << ">cluster_" << cid << " reads=" << it.size() << std::endl;
+
+            if (it.size() > 1) {
+                auto alignment_engine = spoa::createAlignmentEngine(static_cast<spoa::AlignmentType>(0),
+                    5, -4, -8, -6);
+
+                auto graph = spoa::createGraph();
+
+                for (int j = 0; j < it.size(); ++j) {
+                    auto alignment = alignment_engine->align(it[j].seq, graph);
+                    graph->add_alignment(alignment, it[j].seq);
+                }
+                
+                std::string consensus = graph->generate_consensus();
+                consensi_file << consensus << std::endl;
+            } else {
+                if (it.size() > 0) {
+                    consensi_file << it[0].seq << std::endl;
                 }
             }
 
             cid++;
         }
+
+        clusters_file.close();
+        consensi_file.close();
+
+        std::cerr << "Done" << std::endl;
         
         // std::cout << alignmentGraph << std::endl;
     } else if (!strcmp(mode, "cluster_summary")) {
@@ -320,6 +411,7 @@ int main(int argc, char *argv[]) {
         }
 
         sort_read_set(reads);
+        std::cerr << "Done" << std::endl;
 
         std::ifstream in_file(args["clusters"].as<std::string>(), std::ifstream::binary);
         auto clusters = hps::from_stream<cluster_set_t>(in_file);
@@ -384,6 +476,7 @@ int main(int argc, char *argv[]) {
         }
 
         sort_read_set(reads);
+        std::cerr << "Done" << std::endl;
 
         std::ifstream in_file(args["clusters"].as<std::string>(), std::ifstream::binary);
         auto clusters = hps::from_stream<cluster_set_t>(in_file);
