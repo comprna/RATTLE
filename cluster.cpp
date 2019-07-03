@@ -65,6 +65,11 @@ cseq_t cluster_together(const read_set_t &reads, const std::vector<std::vector<k
 cseq_t get_main_seq(std::vector<cseq_t> &seqs, const read_set_t &reads, double repr_percentile) {
     cseq_t old = seqs[0];
 
+    // first sort by seq id, then by size to keep always same sort even with same seq sizes
+    std::stable_sort(seqs.begin(), seqs.end(), [](cseq_t a, cseq_t b) {
+        return a.seq_id > b.seq_id;
+    });
+
     std::stable_sort(seqs.begin(), seqs.end(), [&reads](cseq_t a, cseq_t b) {
         return reads[a.seq_id].seq.size() > reads[b.seq_id].seq.size();
     });
@@ -168,7 +173,7 @@ cluster_set_t cluster_reads(const read_set_t &reads, int kmer_size, double t_s, 
         already_clustered = std::vector<bool>(clusters.size(), false);
 
         for (int i = 0; i < clusters.size(); ++i) {
-            std::cerr << i << std::endl;
+            std::cerr << i << " " << clusters[i].main_seq.seq_id << std::endl;
 
             if (already_clustered[i]) {
                 continue;
