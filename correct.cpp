@@ -338,10 +338,10 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
             }
             
             std::string consensus = graph->generate_consensus();
-            consensus_set.push_back(read_t{">cluster_" + std::to_string(cid) + " reads=" + std::to_string(total_reads), consensus, "+", std::string(consensus.size(), 'K')});
+            consensus_set.push_back(read_t{"@cluster_" + std::to_string(cid) + " reads=" + std::to_string(total_reads), consensus, "+", std::string(consensus.size(), 'K')});
         } else {
             if (it.size() > 0) {
-                consensus_set.push_back(it[0]);
+                consensus_set.push_back(read_t{"@cluster_" + std::to_string(cid) + " reads=" + std::to_string(total_reads), it[0].seq, "+", it[0].quality});
             }
         }
 
