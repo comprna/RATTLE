@@ -3,9 +3,15 @@
 #include <mutex>
 #include <string>
 #include <algorithm>
+#include <iostream>
 
 #include "correct.hpp"
 #include "utils.hpp"
+
+void print_vector(const std::vector<char> &v) {
+    for (int i = 0; i < v.size(); ++i) std::cout<<v[i];
+    std::cout << std::endl;
+}
 
 corrected_pack_t correct_reads(const read_set_t &reads, const read_set_t &aln, double min_occ, double gap_occ, double err_ratio, int n_threads) {
     // generate consensus vector
@@ -72,6 +78,7 @@ corrected_pack_t correct_reads(const read_set_t &reads, const read_set_t &aln, d
     }
 
     // generate mean error and consensus vector
+    std::cerr << "Aln0 ss: " << aln[0].seq.size() << std::endl;
     auto consensus_nt = std::vector<char>(aln[0].seq.size());
     for (int k = 0; k < aln[0].seq.size(); ++k) {
         int max_occ = 0;
@@ -186,6 +193,10 @@ corrected_pack_t correct_reads(const read_set_t &reads, const read_set_t &aln, d
         task.get();
     }
 
+    // print_vector(consensus_nt);
     consensus_nt.erase(std::remove(consensus_nt.begin(), consensus_nt.end(), '-'), consensus_nt.end());
-    return corrected_pack_t{-1, std::string(consensus_nt.begin(), consensus_nt.end()), corrected_reads};
+    // print_vector(consensus_nt);
+    std::string consensus(consensus_nt.data(), consensus_nt.size());
+    // std::cout << "C: " << consensus << std::endl;
+    return corrected_pack_t{-1, consensus, corrected_reads};
 }
