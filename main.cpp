@@ -236,14 +236,8 @@ int main(int argc, char *argv[]) {
         std::ofstream uncorrected_file;
         uncorrected_file.open(args["output"].as<std::string>(".") + "/uncorrected.fq");
 
-        std::ofstream consensi_file_spoa;
-        consensi_file_spoa.open(args["output"].as<std::string>(".") + "/consensi_spoa.fa");
-
-        std::ofstream consensi_file_rattle;
-        consensi_file_rattle.open(args["output"].as<std::string>(".") + "/consensi_rattle.fa");
-
-        std::ofstream consensi_file_repr;
-        consensi_file_repr.open(args["output"].as<std::string>(".") + "/consensi_repr.fa");
+        std::ofstream consensi_file;
+        consensi_file.open(args["output"].as<std::string>(".") + "/consensi.fq");
 
         for (auto &tc: clusters) {           
             int n_files = (tc.seqs.size() + split - 1) / split; // ceil(tc.seqs.size / split)
@@ -284,12 +278,10 @@ int main(int argc, char *argv[]) {
 
         std::mutex mu;
         std::vector<std::future<void>> tasks;
-        auto consensi_spoa = std::vector<read_set_t>(clusters.size());
-        auto consensi_rattle = std::vector<read_set_t>(clusters.size());
-        auto consensi_repr = std::vector<read_set_t>(clusters.size());
+        auto consensi = std::vector<read_set_t>(clusters.size());
 
         for (int t = 0; t < n_threads; ++t) {
-            tasks.emplace_back(std::async(std::launch::async, [t, &consensi_spoa, &consensi_rattle, &consensi_repr, &corrected_file, &uncorrected_file, &consensi_file_spoa, &consensi_file_rattle, &consensi_file_repr, &pending_clusters, &mu, &corrected, &total_reads, gap_occ, min_occ, n_threads] {
+            tasks.emplace_back(std::async(std::launch::async, [t, &consensi, &corrected_file, &uncorrected_file, &consensi_file, &pending_clusters, &mu, &corrected, &total_reads, gap_occ, min_occ, n_threads] {
                 while (true) {
                     pack_to_correct_t pack;
 
@@ -336,15 +328,14 @@ int main(int argc, char *argv[]) {
                             corrected_file << corrected_reads[i].quality << std::endl;
                         }
                         corrected+=creads.size();
-                        consensi_spoa[pack.original_cluster_id].push_back(read_t{">r", consensus, "+", std::string(consensus.size(), 'K')});
-                        consensi_rattle[pack.original_cluster_id].push_back(read_t{">r", corrected_reads_pack.consensus, "+", std::string(corrected_reads_pack.consensus.size(), 'K')});
+                        
+                        // save in consensus header the number of reads of this cluster
+                        consensi[pack.original_cluster_id].push_back(read_t{std::to_string(creads.size()), consensus, "+", std::string(consensus.size(), 'K')});
 
                         // sort corrected cluster
                         std::stable_sort(corrected_reads.begin(), corrected_reads.end(), [](read_t a, read_t b) {
                             return a.seq.size() > b.seq.size();
                         });
-
-                        consensi_repr[pack.original_cluster_id].push_back(read_t{">r", corrected_reads[corrected_reads.size() * 0.15].seq, "+", std::string(corrected_reads[corrected_reads.size() * 0.15].seq.size(), 'K')});
                     }
                 }
             }));
@@ -359,8 +350,14 @@ int main(int argc, char *argv[]) {
 
         std::cerr << "Generating consensi..." << std::endl;
         cid = 0;
-        for (const auto& it: consensi_spoa) {
-            if (it.size() > 0) consensi_file_spoa << ">cluster_" << cid << " reads=" << it.size() << std::endl;
+        for (const auto& it: consensi) {
+            int total_reads = 0;
+
+            for (const auto& rit: it) {
+                total_reads += std::stoi(rit.header);
+            }
+
+            if (it.size() > 0) consensi_file << ">cluster_" << cid << " reads=" << total_reads << std::endl;
 
             if (it.size() > 1) {
                 auto alignment_engine = spoa::createAlignmentEngine(static_cast<spoa::AlignmentType>(0),
@@ -374,64 +371,11 @@ int main(int argc, char *argv[]) {
                 }
                 
                 std::string consensus = graph->generate_consensus();
-                consensi_file_spoa << consensus << std::endl;
+                consensi_file << consensus << std::endl << "+" << std::endl << std::string(consensus.size(), 'K') << std::endl;
             } else {
                 if (it.size() > 0) {
-                    consensi_file_spoa << it[0].seq << std::endl;
+                    consensi_file << it[0].seq << std::endl << "+" << std::endl << it[0].quality << std::endl;
                 }
-            }
-
-            cid++;
-        }
-
-        cid = 0;
-        for (const auto& it: consensi_rattle) {
-            if (it.size() > 0) consensi_file_rattle << ">cluster_" << cid << " reads=" << it.size() << std::endl;
-
-            if (it.size() > 1) {
-                auto alignment_engine = spoa::createAlignmentEngine(static_cast<spoa::AlignmentType>(0),
-                    5, -4, -8, -6);
-
-                auto graph = spoa::createGraph();
-
-                for (int j = 0; j < it.size(); ++j) {
-                    auto alignment = alignment_engine->align(it[j].seq, graph);
-                    graph->add_alignment(alignment, it[j].seq);
-                    std::cerr << "Adding seq: " << it[j].seq << std::endl;
-                }
-                
-                std::vector<std::string> msa;
-                graph->generate_multiple_sequence_alignment(msa);
-
-                read_set_t aln_reads = read_set_t(it.size());
-                int i = 0;
-                for (const auto& mit: msa) {
-                    std::cerr << "MIT Seq: " << mit << std::endl;
-                    aln_reads[i] = read_t{it[i].header, mit, "", ""};
-                    std::cerr << "Aln read seq: " << aln_reads[i].seq << std::endl;
-                    i++;
-                }
-
-                std::cerr << "((((((((((((((((((((((((((" << std::endl;
-
-                auto corrected_reads_pack = correct_reads(it, aln_reads, min_occ, gap_occ, 30.0, 1);
-                std::cerr << corrected_reads_pack.consensus << std::endl;
-
-                consensi_file_rattle << corrected_reads_pack.consensus << std::endl;
-            } else {
-                if (it.size() > 0) {
-                    consensi_file_rattle << it[0].seq << std::endl;
-                }
-            }
-
-            cid++;
-        }
-
-        cid = 0;
-        for (const auto& it: consensi_repr) {
-            if (it.size() > 0) consensi_file_repr << ">cluster_" << cid << " reads=" << it.size() << std::endl;
-            if (it.size() > 0) {
-                consensi_file_repr << it[0].seq << std::endl;
             }
 
             cid++;
@@ -439,9 +383,7 @@ int main(int argc, char *argv[]) {
 
         uncorrected_file.close();
         corrected_file.close();
-        consensi_file_spoa.close();
-        consensi_file_rattle.close();
-        consensi_file_repr.close();
+        consensi_file.close();
 
         std::cerr << "Done" << std::endl;
         
@@ -606,6 +548,7 @@ int main(int argc, char *argv[]) {
 
             ++cid;
         }
+    } else if (!strcmp(mode, "polish")) {
     } else {
         std::cerr << "Unknown mode. More info" << std::endl;
     }
