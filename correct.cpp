@@ -4,16 +4,19 @@
 #include <string>
 #include <algorithm>
 #include <iostream>
+#include <queue>
 
 #include "correct.hpp"
+#include "cluster.hpp"
 #include "utils.hpp"
+#include "spoa/spoa.hpp"
 
 void print_vector(const std::vector<char> &v) {
     for (int i = 0; i < v.size(); ++i) std::cout<<v[i];
     std::cout << std::endl;
 }
 
-corrected_pack_t correct_reads(const read_set_t &reads, const read_set_t &aln, double min_occ, double gap_occ, double err_ratio, int n_threads) {
+corrected_pack_t correct_read_pack(const read_set_t &reads, const read_set_t &aln, double min_occ, double gap_occ, double err_ratio, int n_threads) {
     // generate consensus vector
     auto nt_info = std::vector<map_nt_info_t>(aln[0].seq.size());
     for (int i = 0; i < nt_info.size(); i++) {
@@ -199,4 +202,155 @@ corrected_pack_t correct_reads(const read_set_t &reads, const read_set_t &aln, d
     std::string consensus(consensus_nt.data(), consensus_nt.size());
     // std::cout << "C: " << consensus << std::endl;
     return corrected_pack_t{-1, consensus, corrected_reads};
+}
+
+correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &reads, double min_occ, double gap_occ, double err_ratio, int split, int min_reads, int n_threads) {
+    std::queue<pack_to_correct_t> pending_clusters;
+    int corrected = 0;
+    int total_reads = 0;
+    int cid = 0;
+
+    read_set_t uncorrected_read_set;
+    read_set_t corrected_read_set;
+    read_set_t consensus_set;
+
+    for (auto &tc: clusters) {           
+        int n_files = (tc.seqs.size() + split - 1) / split; // ceil(tc.seqs.size / split)
+
+        for (int nf = 0; nf < n_files; nf++) {
+            int nreads_in_cluster = (tc.seqs.size() + n_files - 1 - nf) / n_files;
+            auto creads = read_set_t(nreads_in_cluster);
+
+            int i = 0;
+            for (int j = nf; j < tc.seqs.size(); j += n_files) {
+                auto ts = tc.seqs[j];
+
+                if (ts.rev) {
+                    reads[ts.seq_id].seq = reverse_complement(reads[ts.seq_id].seq);                
+                    std::reverse(reads[ts.seq_id].quality.begin(), reads[ts.seq_id].quality.end()); 
+                }
+
+                creads[i] = reads[ts.seq_id];
+                i++;
+                total_reads++;
+            }
+
+            if (creads.size() > min_reads) {
+                pending_clusters.push(pack_to_correct_t{cid, creads});
+            } else {
+                for (int i = 0; i < creads.size(); ++i) {
+                    corrected++;
+                    uncorrected_read_set.push_back(creads[i]);
+                }
+            }
+        }
+
+        cid++;
+    }
+
+    std::mutex mu;
+    std::vector<std::future<void>> tasks;
+    auto consensi = std::vector<read_set_t>(clusters.size());
+
+    for (int t = 0; t < n_threads; ++t) {
+        tasks.emplace_back(std::async(std::launch::async, [t, &consensi, &corrected_read_set, &uncorrected_read_set, &consensus_set, &pending_clusters, &mu, &corrected, &total_reads, gap_occ, min_occ, n_threads] {
+            while (true) {
+                pack_to_correct_t pack;
+
+                {
+                    std::lock_guard<std::mutex> lock(mu);
+                    if (pending_clusters.empty()) break;
+
+                    pack = pending_clusters.front();
+                    pending_clusters.pop();
+
+                    print_progress(corrected, total_reads);
+                }
+
+                auto creads = pack.reads;
+                auto alignment_engine = spoa::createAlignmentEngine(static_cast<spoa::AlignmentType>(0),
+                5, -4, -8, -6);
+
+                auto graph = spoa::createGraph();
+
+                for (int j = 0; j < creads.size(); ++j) {
+                    auto alignment = alignment_engine->align(creads[j].seq, graph);
+                    graph->add_alignment(alignment, creads[j].seq);
+                }
+                
+                int i = 0;
+                std::vector<std::string> msa;
+                graph->generate_multiple_sequence_alignment(msa);
+
+                read_set_t aln_reads = read_set_t(creads.size());
+                for (const auto& it: msa) {
+                    aln_reads[i] = read_t{creads[i].header, it, "", ""};
+                    i++;
+                }
+
+                auto corrected_reads_pack = correct_read_pack(creads, aln_reads, min_occ, gap_occ, 30.0, 1);
+                auto corrected_reads = corrected_reads_pack.reads;
+                auto consensus = graph->generate_consensus();
+                {
+                    std::lock_guard<std::mutex> lock(mu);
+                    for (int i = 0; i < corrected_reads.size(); ++i) {
+                        corrected_read_set.push_back(corrected_reads[i]);
+                    }
+                    corrected+=creads.size();
+                    
+                    // save in consensus header the number of reads of this cluster
+                    consensi[pack.original_cluster_id].push_back(read_t{std::to_string(creads.size()), consensus, "+", std::string(consensus.size(), 'K')});
+
+                    // sort corrected cluster
+                    std::stable_sort(corrected_reads.begin(), corrected_reads.end(), [](read_t a, read_t b) {
+                        return a.seq.size() > b.seq.size();
+                    });
+                }
+            }
+        }));
+    }
+
+    for (auto &&task : tasks) {
+        task.get();
+    }
+    
+    print_progress(corrected, total_reads);
+    std::cerr << std::endl;
+
+    std::cerr << "Generating consensi..." << std::endl;
+    cid = 0;
+    for (const auto& it: consensi) {
+        int total_reads = 0;
+
+        for (const auto& rit: it) {
+            total_reads += std::stoi(rit.header);
+        }
+
+        if (it.size() > 1) {
+            auto alignment_engine = spoa::createAlignmentEngine(static_cast<spoa::AlignmentType>(0),
+                5, -4, -8, -6);
+
+            auto graph = spoa::createGraph();
+
+            for (int j = 0; j < it.size(); ++j) {
+                auto alignment = alignment_engine->align(it[j].seq, graph);
+                graph->add_alignment(alignment, it[j].seq);
+            }
+            
+            std::string consensus = graph->generate_consensus();
+            consensus_set.push_back(read_t{">cluster_" + std::to_string(cid) + " reads=" + std::to_string(total_reads), consensus, "+", std::string(consensus.size(), 'K')});
+        } else {
+            if (it.size() > 0) {
+                consensus_set.push_back(it[0]);
+            }
+        }
+
+        cid++;
+    }
+
+    return correction_results_t{
+        corrected_read_set,
+        uncorrected_read_set,
+        consensus_set
+    };
 }

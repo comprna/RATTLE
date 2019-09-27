@@ -20,11 +20,11 @@ kmer.o: kmer.hpp kmer.cpp
 similarity.o: similarity.hpp similarity.cpp
 	$(CC) -c $(CFLAGS) similarity.cpp
 
-cluster.o: cluster.hpp cluster.cpp kmer.o similarity.o utils.o fasta.o
+cluster.o: cluster.hpp cluster.cpp kmer.cpp similarity.cpp utils.cpp fasta.cpp
 	$(CC) -c $(CFLAGS) cluster.cpp kmer.cpp similarity.cpp utils.cpp fasta.cpp
 
-correct.o: correct.hpp correct.cpp utils.o fasta.o
-	$(CC) -c $(CFLAGS) correct.cpp utils.cpp fasta.cpp
+correct.o: correct.hpp correct.cpp utils.cpp fasta.cpp
+	$(CC) -c $(CFLAGS) $(LIBS) correct.cpp utils.cpp fasta.cpp
 
 clean: 
 	rm -f *.o
