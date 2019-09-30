@@ -1,6 +1,7 @@
 #include "utils.hpp"
 #include <iostream>
 #include <math.h>
+#include <sstream>
 
 char phred_symbol(double p) {
     return -10 * log10(p) + 33;
@@ -78,4 +79,15 @@ void print_progress(int a, int b) {
 
     std::cerr << "] " << a << "/" << b << " (" << progress * 100.0 << "%)" << "\r";
     std::cerr.flush();
+}
+
+std::vector<std::string> split(const std::string &s, char sep) {
+    std::vector<std::string> res;
+    std::stringstream ss(s);
+    std::string item;
+
+    while (getline(ss, item, sep))
+        res.push_back(item);
+
+    return res;
 }

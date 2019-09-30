@@ -15,6 +15,7 @@ typedef std::vector<read_t> read_set_t;
 
 read_set_t read_fasta_file(std::string file);
 read_set_t read_fastq_file(std::string file);
+void write_fastq_file(const read_set_t &reads, std::string file);
 void sort_read_set(read_set_t &rs);
 
 #endif
