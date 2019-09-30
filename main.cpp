@@ -398,19 +398,61 @@ int main(int argc, char *argv[]) {
             { "help", {"-h", "--help"},
             "shows this help message", 0},
             { "input", {"-i", "--input"},
-            "input fasta/fastq file (required)", 1},
-            { "clusters", {"-c", "--clusters"},
-            "clusters file (required)", 1},
+            "input RATTLE consensi fasta/fastq file (required)", 1},
             { "output", {"-o", "--output-folder"},
             "output folder for fastx files (default: .)", 1},
-            { "minreads", {"-m", "--min-reads"},
-            "min reads per cluster to save it into a file", 1},
-            { "fastq", {"--fastq"},
-            "whether input and output should be in fastq format (instead of fasta)", 0},
+            { "threads", {"-t", "--threads"},
+            "number of threads to use (default: 1)", 1},
         }};
 
+        argagg::parser_results args;
+        try {
+            args = argparser.parse(argc, argv);
+        } catch (const std::exception& e) {
+            std::cerr << e.what() << std::endl;
+            return EXIT_FAILURE;
+        }
 
+        if (args["help"]) {
+            std::cerr << argparser;
+            return EXIT_SUCCESS;
+        }
 
+        if (!args["input"]) {
+            std::cerr << "ERROR: No input file provided" << std::endl;
+            std::cerr << argparser;
+            return EXIT_FAILURE;
+        }
+
+        std::cerr << "Reading fasta file... ";
+        
+        // TODO: handle non-existing file
+        read_set_t reads = read_fastq_file(args["input"]);
+
+        sort_read_set(reads);
+        std::cerr << "Done" << std::endl;
+
+        int n_threads = args["threads"].as<int>(1);
+        std::cerr << "Clustering consensus sequences..." << std::endl;
+        auto clusters = cluster_reads(reads, 6, 0.93, 10, 0.4, 0.2, 0.05, 0, true, 0.15, n_threads);
+        auto correction = correct_reads(clusters, reads, 0.3, 0.3, 30.0, 200, 0, n_threads);
+
+        int cid = 0;
+        for (auto &r: correction.consensi) {
+            int total_reads = 0;
+            auto creads = clusters[cid].seqs;
+
+            for (auto &s: creads) {
+                auto info = split(reads[s.seq_id].header, '=');
+                int rcount = std::stoi(info[1]);
+                total_reads += rcount;
+            }
+
+            r.header += " total_reads=" + std::to_string(total_reads);
+            cid++;
+        }
+
+        write_fastq_file(correction.consensi, args["output"].as<std::string>(".") + "/transcriptome.fq");
     } else {
         std::cerr << "Unknown mode. More info" << std::endl;
     }

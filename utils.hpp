@@ -22,5 +22,6 @@ double mean(std::vector<int> s);
 double var(std::vector<int> s);
 std::string random_str(std::default_random_engine eng, int sz);
 void print_progress(int a, int b);
+std::vector<std::string> split(const std::string &s, char sep);
 
 #endif
