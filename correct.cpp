@@ -290,7 +290,18 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
 
                 auto corrected_reads_pack = correct_read_pack(creads, aln_reads, min_occ, gap_occ, 30.0, 1);
                 auto corrected_reads = corrected_reads_pack.reads;
+
+                // create new MSA with corrected reads
+                sort_read_set(corrected_reads);
+                graph = spoa::createGraph();
+
+                for (int j = 0; j < corrected_reads.size(); ++j) {
+                    auto alignment = alignment_engine->align(corrected_reads[j].seq, graph);
+                    graph->add_alignment(alignment, corrected_reads[j].seq);
+                }
+
                 auto consensus = graph->generate_consensus();
+                
                 {
                     std::lock_guard<std::mutex> lock(mu);
                     for (int i = 0; i < corrected_reads.size(); ++i) {
