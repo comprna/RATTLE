@@ -60,6 +60,8 @@ int main(int argc, char *argv[]) {
             "minimum number of reads per cluster (default: 0)", 1},
             { "repr_percentile", {"-p", "--repr-percentile"},
             "cluster representative percentile (default: 0.5)", 1},  
+            { "rna", {"--rna"},
+            "use this mode if data is direct RNA (disables checking both strands)", 0},
         }};
 
         argagg::parser_results args;
@@ -81,16 +83,6 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
 
-        std::cerr << "Reading fasta file... ";
-        
-        // TODO: handle non-existing file
-        read_set_t reads;
-        if (args["fastq"]) {
-            reads = read_fastq_file(args["input"]);
-        } else {
-            reads = read_fasta_file(args["input"]);
-        }
-
         int n_threads = args["threads"].as<int>(1);
 
         int kmer_size = args["kmer_size"].as<int>(14);
@@ -108,10 +100,24 @@ int main(int argc, char *argv[]) {
         int min_reads_cluster = args["min_reads_cluster"].as<int>(0);
         double repr_percentile = args["repr_percentile"].as<double>(0.5);
 
+        bool is_rna = args["rna"];
+        std::cerr << "RNA mode: " << is_rna << std::endl;
+
+        // TODO: handle non-existing file
+        std::cerr << "Reading fasta file... ";
+        
+        read_set_t reads;
+        if (args["fastq"]) {
+            reads = read_fastq_file(args["input"]);
+        } else {
+            reads = read_fasta_file(args["input"]);
+        }
+
+
         sort_read_set(reads);
         std::cerr << "Done" << std::endl;
 
-        auto gene_clusters = cluster_reads(reads, kmer_size, t_s, t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, true, repr_percentile, n_threads);
+        auto gene_clusters = cluster_reads(reads, kmer_size, t_s, t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, false, repr_percentile, is_rna, n_threads);
         std::ofstream out_file(args["output"].as<std::string>(".") + "/clusters.out", std::ofstream::binary);
         
         std::cerr << "Gene clustering done" << std::endl;
@@ -144,7 +150,7 @@ int main(int argc, char *argv[]) {
             }
 
             // cluster gene reads & save new iso clusters
-            auto iso_clusters_tmp = cluster_reads(gene_reads, iso_kmer_size, iso_t_s, iso_t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, false, repr_percentile, n_threads);
+            auto iso_clusters_tmp = cluster_reads(gene_reads, iso_kmer_size, iso_t_s, iso_t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, false, repr_percentile, is_rna, n_threads);
             for (auto &ic : iso_clusters_tmp) {
                 cluster_t iso_cluster;
                 iso_cluster.main_seq = cseq_t{c.seqs[ic.main_seq.seq_id].seq_id, ic.main_seq.rev};
@@ -403,6 +409,8 @@ int main(int argc, char *argv[]) {
             "output folder for fastx files (default: .)", 1},
             { "threads", {"-t", "--threads"},
             "number of threads to use (default: 1)", 1},
+            { "rna", {"--rna"},
+            "use this mode if data is direct RNA (disables checking both strands)", 0},
         }};
 
         argagg::parser_results args;
@@ -433,8 +441,10 @@ int main(int argc, char *argv[]) {
         std::cerr << "Done" << std::endl;
 
         int n_threads = args["threads"].as<int>(1);
+        bool is_rna = args["rna"];
+
         std::cerr << "Clustering consensus sequences..." << std::endl;
-        auto clusters = cluster_reads(reads, 6, 0.93, 10, 0.4, 0.2, 0.05, 0, true, 0.15, n_threads);
+        auto clusters = cluster_reads(reads, 6, 0.5, 25, 0.4, 0.4, 0.05, 0, false, 0.15, is_rna, n_threads);
         auto correction = correct_reads(clusters, reads, 0.3, 0.3, 30.0, 200, 0, n_threads);
 
         int cid = 0;

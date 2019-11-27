@@ -9,15 +9,14 @@
 #include <iostream>
 #include <algorithm>
 
-cseq_t cluster_together(const read_set_t &reads, const std::vector<std::vector<kmer_t>> &kmers, const std::vector<std::vector<kmer_t>> &rev_kmers, const std::vector<kmer_bv_t> &bv_kmers, const std::vector<kmer_bv_t> &rev_bv_kmers, int i, int j, int kmer_size, double t_s, double t_v, double bv_threshold, bool use_hc) {
-    // filter by kmer bv intersection score
+cseq_t cluster_together(const read_set_t &reads, const std::vector<std::vector<kmer_t>> &kmers, const std::vector<std::vector<kmer_t>> &rev_kmers, const std::vector<kmer_bv_t> &bv_kmers, const std::vector<kmer_bv_t> &rev_bv_kmers, int i, int j, int kmer_size, double t_s, double t_v, double bv_threshold, bool use_hc, bool is_rna) {    // filter by kmer bv intersection score
     auto bv_common = (bv_kmers[i] & bv_kmers[j]).count();
     auto rev_bv_common = (bv_kmers[i] & rev_bv_kmers[j]).count();
 
     double mmax = std::max(bv_kmers[i].count(), bv_kmers[j].count());
     double bv_score = std::max(bv_common/mmax, rev_bv_common/mmax);
 
-    if (bv_common/mmax >= bv_threshold) {
+    if (bv_threshold == 0 || bv_common/mmax >= bv_threshold) {
         auto common = get_common_kmers(kmers[i], kmers[j]);
         auto sim = calc_similarity(common, kmer_size);
 
@@ -38,6 +37,9 @@ cseq_t cluster_together(const read_set_t &reads, const std::vector<std::vector<k
         }
     }
     
+    if (is_rna) return cseq_t{-1, false};
+
+    // check reverse for cDNA
     if (rev_bv_common/mmax >= bv_threshold) {
         auto rev_common = get_common_kmers(kmers[i], rev_kmers[j]);
         auto rev_sim = calc_similarity(rev_common, kmer_size);
@@ -88,7 +90,7 @@ cseq_t get_main_seq(std::vector<cseq_t> &seqs, const read_set_t &reads, double r
     return ns;
 }
 
-cluster_set_t cluster_reads(const read_set_t &reads, int kmer_size, double t_s, double t_v, double bv_threshold, double min_bv_threshold, double bv_falloff, int min_reads_cluster, bool use_hc, double repr_percentile, int n_threads) {
+cluster_set_t cluster_reads(const read_set_t &reads, int kmer_size, double t_s, double t_v, double bv_threshold, double min_bv_threshold, double bv_falloff, int min_reads_cluster, bool use_hc, double repr_percentile, bool is_rna, int n_threads) {
     cluster_set_t clusters;
     std::mutex mu;
     auto already_clustered = std::vector<bool>(reads.size(), false);
@@ -102,9 +104,9 @@ cluster_set_t cluster_reads(const read_set_t &reads, int kmer_size, double t_s, 
     
     std::vector<std::future<void>> tasks;
     for (int t = 0; t < n_threads; ++t) {
-        tasks.emplace_back(std::async(std::launch::async, [t, &reads, n_threads, kmer_size, &kmers, &rev_kmers, &bv_kmers, &rev_bv_kmers] {
+        tasks.emplace_back(std::async(std::launch::async, [t, &reads, n_threads, kmer_size, &kmers, &rev_kmers, &bv_kmers, &rev_bv_kmers, is_rna] {
             for (int i = t; i < reads.size(); i+=n_threads) {
-                read_kmers_t k1 = extract_kmers_from_read(reads[i].seq, kmer_size);
+                read_kmers_t k1 = extract_kmers_from_read(reads[i].seq, kmer_size, !is_rna);
 
                 kmers[i] = k1.list_forward;
                 rev_kmers[i] = k1.list_reverse;
@@ -134,14 +136,14 @@ cluster_set_t cluster_reads(const read_set_t &reads, int kmer_size, double t_s, 
         already_clustered[i] = true;
 
         for (int t = 0; t < n_threads; ++t) {
-            tasks.emplace_back(std::async(std::launch::async, [t, i, t_v, t_s, &mu, &kmers, &rev_kmers, &bv_kmers, &rev_bv_kmers, &reads, n_threads, kmer_size, &already_clustered, &cseqs, bv_threshold, use_hc] {
+            tasks.emplace_back(std::async(std::launch::async, [t, i, t_v, t_s, &mu, &kmers, &rev_kmers, &bv_kmers, &rev_bv_kmers, &reads, n_threads, kmer_size, &already_clustered, &cseqs, bv_threshold, use_hc, is_rna] {
                 for (int j = i+1+t; j < reads.size(); j+=n_threads) {
                     if (already_clustered[j]) {
                         continue;
                     }
 
                     // CHECK TODO: Try saving cseqs to a local thread vector and then lock at the end
-                    auto sinfo = cluster_together(reads, kmers, rev_kmers, bv_kmers, rev_bv_kmers, i, j, kmer_size, t_s, t_v, bv_threshold, use_hc);
+                    auto sinfo = cluster_together(reads, kmers, rev_kmers, bv_kmers, rev_bv_kmers, i, j, kmer_size, t_s, t_v, bv_threshold, use_hc, is_rna);
                     if (sinfo.seq_id != -1) {
                         std::lock_guard<std::mutex> lock(mu);
                         already_clustered[sinfo.seq_id] = true;
@@ -185,14 +187,14 @@ cluster_set_t cluster_reads(const read_set_t &reads, int kmer_size, double t_s, 
             // NOTE: We are storing cluster IDs, not read IDs!!!!
             clusters_to_merge.push_back(cseq_t{i, false});
             for (int t = 0; t < n_threads; ++t) {
-                tasks.emplace_back(std::async(std::launch::async, [t, i, t_v, t_s, &clusters, &mu, &kmers, &rev_kmers, &bv_kmers, &rev_bv_kmers, &reads, n_threads, kmer_size, &already_clustered, &clusters_to_merge, current_bv_threshold, use_hc] {
+                tasks.emplace_back(std::async(std::launch::async, [t, i, t_v, t_s, &clusters, &mu, &kmers, &rev_kmers, &bv_kmers, &rev_bv_kmers, &reads, n_threads, kmer_size, &already_clustered, &clusters_to_merge, current_bv_threshold, use_hc, is_rna] {
                     for (int j = i+1+t; j < clusters.size(); j+=n_threads) {
                         if (already_clustered[j]) {
                             continue;
                         }
 
                         // CHECK TODO: Try saving clusters_to_merge to a local thread vector and then lock at the end
-                        auto sinfo = cluster_together(reads, kmers, rev_kmers, bv_kmers, rev_bv_kmers, clusters[i].main_seq.seq_id, clusters[j].main_seq.seq_id, kmer_size, t_s, t_v, current_bv_threshold, use_hc);
+                        auto sinfo = cluster_together(reads, kmers, rev_kmers, bv_kmers, rev_bv_kmers, clusters[i].main_seq.seq_id, clusters[j].main_seq.seq_id, kmer_size, t_s, t_v, current_bv_threshold, use_hc, is_rna);
                         if (sinfo.seq_id != -1) {
                             std::lock_guard<std::mutex> lock(mu);
                             already_clustered[j] = true;
