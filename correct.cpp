@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <iostream>
 #include <queue>
+#include <fstream>
 
 #include "correct.hpp"
 #include "cluster.hpp"
@@ -16,7 +17,66 @@ void print_vector(const std::vector<char> &v) {
     std::cout << std::endl;
 }
 
-corrected_pack_t correct_read_pack(const read_set_t &reads, const read_set_t &aln, double min_occ, double gap_occ, double err_ratio, int n_threads) {
+void fix_msa_ends(read_set_t &reads, read_set_t &aln) {
+    for (int i = 0; i < aln.size(); ++i) {
+        bool reversed = false;
+
+remove_blocks:
+        int pos = 0;
+        int end_pos = 0;
+        while (pos < aln[i].seq.size()) {
+            while (pos < aln[i].seq.size() && aln[i].seq[pos] == '-') ++pos;
+            
+            end_pos = pos;
+            int gaps = 0;
+            int sz = 0;
+            while (gaps < 4 && end_pos < aln[i].seq.size()) {
+                if (aln[i].seq[end_pos] == '-') ++gaps;
+                else {
+                    ++sz;
+                    gaps = 0;
+                }
+
+                ++end_pos;
+            }
+
+            if (sz < 10) {
+                // find large gap after small block
+                while (end_pos < aln[i].seq.size() && aln[i].seq[end_pos] == '-') {
+                    ++end_pos;
+                    ++gaps;
+                } 
+                
+                if (gaps >= 20) {
+                    for (int j = pos; j < end_pos; ++j) {
+                        aln[i].seq[j] = '-';
+                    }
+
+                    reads[i].quality.erase(0, sz);
+                    pos = end_pos;
+                } else {
+                    std::reverse(aln[i].seq.begin(), aln[i].seq.end());
+                    std::reverse(reads[i].quality.begin(), reads[i].quality.end());
+                    if (!reversed) {
+                        reversed = true;
+                        goto remove_blocks;
+                    }
+                    break;
+                }
+            } else {
+                std::reverse(aln[i].seq.begin(), aln[i].seq.end());
+                std::reverse(reads[i].quality.begin(), reads[i].quality.end()); 
+                if (!reversed) {
+                    reversed = true;
+                    goto remove_blocks;
+                }
+                break;
+            }
+        }
+    }
+}
+
+consensus_vector_t generate_consensus_vector(const read_set_t &reads, const read_set_t &aln, int n_threads) {
     // generate consensus vector
     auto nt_info = std::vector<map_nt_info_t>(aln[0].seq.size());
     for (int i = 0; i < nt_info.size(); i++) {
@@ -81,7 +141,7 @@ corrected_pack_t correct_read_pack(const read_set_t &reads, const read_set_t &al
     }
 
     // generate mean error and consensus vector
-    std::cerr << "Aln0 ss: " << aln[0].seq.size() << std::endl;
+    // std::cerr << "Aln0 ss: " << aln[0].seq.size() << std::endl;
     auto consensus_nt = std::vector<char>(aln[0].seq.size());
     for (int k = 0; k < aln[0].seq.size(); ++k) {
         int max_occ = 0;
@@ -104,11 +164,18 @@ corrected_pack_t correct_read_pack(const read_set_t &reads, const read_set_t &al
 
         consensus_nt[k] = max_nt;
     }
+}
+
+corrected_pack_t correct_read_pack(const read_set_t &reads, const read_set_t &aln, double min_occ, double gap_occ, double err_ratio, int n_threads) {
+    auto cv = generate_consensus_vector(reads, aln, n_threads);
+    auto nt_info = cv.nt_info;
+    auto consensus_nt = cv.consensus_nt;
 
     // correct aln
     auto corrected_reads = read_set_t(reads.size());
-
-    tasks.clear();
+    std::mutex mu;
+    std::vector<std::future<void>> tasks;
+    
     for (int t = 0; t < n_threads; ++t) {
         tasks.emplace_back(std::async(std::launch::async, [t, &reads, &aln, n_threads, &mu, &nt_info, &consensus_nt, min_occ, gap_occ, err_ratio, &corrected_reads] {
             for (int i = t; i < reads.size(); i+=n_threads) {
@@ -215,6 +282,7 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
     read_set_t consensus_set;
 
     for (auto &tc: clusters) {           
+        // if (tc.seqs.size() != 1121) continue;
         int n_files = (tc.seqs.size() + split - 1) / split; // ceil(tc.seqs.size / split)
 
         for (int nf = 0; nf < n_files; nf++) {
@@ -252,10 +320,12 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
     std::vector<std::future<void>> tasks;
     auto consensi = std::vector<read_set_t>(clusters.size());
 
+    int nf = 0;
     for (int t = 0; t < n_threads; ++t) {
-        tasks.emplace_back(std::async(std::launch::async, [t, &consensi, &corrected_read_set, &uncorrected_read_set, &consensus_set, &pending_clusters, &mu, &corrected, &total_reads, gap_occ, min_occ, n_threads] {
+        tasks.emplace_back(std::async(std::launch::async, [&nf, t, &consensi, &corrected_read_set, &uncorrected_read_set, &consensus_set, &pending_clusters, &mu, &corrected, &total_reads, gap_occ, min_occ, n_threads] {
             while (true) {
                 pack_to_correct_t pack;
+                int a;
 
                 {
                     std::lock_guard<std::mutex> lock(mu);
@@ -263,6 +333,7 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
 
                     pack = pending_clusters.front();
                     pending_clusters.pop();
+                    a = nf++;
 
                     print_progress(corrected, total_reads);
                 }
@@ -287,7 +358,19 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
                     aln_reads[i] = read_t{creads[i].header, it, "", ""};
                     i++;
                 }
+                
+                fix_msa_ends(creads, aln_reads);
 
+                // std::ofstream f;
+                // f.open("aln_" + std::to_string(a) + ".aln");
+
+                // for (const auto& it: aln_reads) {
+                //     f << it.header << std::endl;
+                //     f << it.seq << std::endl;
+                // }
+
+                // f.close();
+                
                 auto corrected_reads_pack = correct_read_pack(creads, aln_reads, min_occ, gap_occ, 30.0, 1);
                 auto corrected_reads = corrected_reads_pack.reads;
 
@@ -299,6 +382,23 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
                     auto alignment = alignment_engine->align(corrected_reads[j].seq, graph);
                     graph->add_alignment(alignment, corrected_reads[j].seq);
                 }
+
+                //////// SAVE CORRECTED MSA
+                // i = 0;
+                // msa = std::vector<std::string>();
+                // graph->generate_multiple_sequence_alignment(msa);
+
+                // std::ofstream f;
+                // f.open("corr_aln_" + std::to_string(a) + ".aln");
+
+                // for (const auto& it: msa) {
+                //     f << corrected_reads[i].header << std::endl;
+                //     f << it << std::endl;
+                //     i++;
+                // }
+
+                // f.close();
+                //////// SAVE CORRECTED MSA
 
                 auto consensus = graph->generate_consensus();
                 
@@ -357,6 +457,7 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
         }
 
         cid++;
+        print_progress(cid, consensi.size());
     }
 
     return correction_results_t{
