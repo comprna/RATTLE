@@ -2,6 +2,7 @@
 #define _rattle_correct_h
 
 #include <unordered_map>
+#include <string>
 #include "fasta.hpp"
 #include "cluster.hpp"
 
@@ -35,10 +36,11 @@ struct consensus_vector_t {
 };
 
 typedef std::unordered_map<char, pos_info_t> map_nt_info_t;
+typedef std::vector<std::string> msa_t;
 
-consensus_vector_t generate_consensus_vector(const read_set_t &reads, const read_set_t &aln, int n_threads);
-corrected_pack_t correct_read_pack(const read_set_t &reads, const read_set_t &aln, double min_occ, double gap_occ, double err_ratio, int n_threads);
+consensus_vector_t generate_consensus_vector(const read_set_t &reads, const msa_t &aln, int n_threads);
+corrected_pack_t correct_read_pack(const read_set_t &reads, const msa_t &aln, double min_occ, double gap_occ, double err_ratio, int n_threads);
 correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &reads, double min_occ, double gap_occ, double err_ratio, int split, int min_reads, int n_threads);
-void fix_msa_ends(read_set_t &reads, read_set_t &aln);
+void fix_msa_ends(read_set_t &reads, msa_t &aln);
 
 #endif

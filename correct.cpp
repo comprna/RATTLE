@@ -17,21 +17,21 @@ void print_vector(const std::vector<char> &v) {
     std::cout << std::endl;
 }
 
-void fix_msa_ends(read_set_t &reads, read_set_t &aln) {
+void fix_msa_ends(read_set_t &reads, msa_t &aln) {
     for (int i = 0; i < aln.size(); ++i) {
         bool reversed = false;
 
 remove_blocks:
         int pos = 0;
         int end_pos = 0;
-        while (pos < aln[i].seq.size()) {
-            while (pos < aln[i].seq.size() && aln[i].seq[pos] == '-') ++pos;
+        while (pos < aln[i].size()) {
+            while (pos < aln[i].size() && aln[i][pos] == '-') ++pos;
             
             end_pos = pos;
             int gaps = 0;
             int sz = 0;
-            while (gaps < 4 && end_pos < aln[i].seq.size()) {
-                if (aln[i].seq[end_pos] == '-') ++gaps;
+            while (gaps < 4 && end_pos < aln[i].size()) {
+                if (aln[i][end_pos] == '-') ++gaps;
                 else {
                     ++sz;
                     gaps = 0;
@@ -42,20 +42,20 @@ remove_blocks:
 
             if (sz < 10) {
                 // find large gap after small block
-                while (end_pos < aln[i].seq.size() && aln[i].seq[end_pos] == '-') {
+                while (end_pos < aln[i].size() && aln[i][end_pos] == '-') {
                     ++end_pos;
                     ++gaps;
                 } 
                 
                 if (gaps >= 20) {
                     for (int j = pos; j < end_pos; ++j) {
-                        aln[i].seq[j] = '-';
+                        aln[i][j] = '-';
                     }
 
                     reads[i].quality.erase(0, sz);
                     pos = end_pos;
                 } else {
-                    std::reverse(aln[i].seq.begin(), aln[i].seq.end());
+                    std::reverse(aln[i].begin(), aln[i].end());
                     std::reverse(reads[i].quality.begin(), reads[i].quality.end());
                     if (!reversed) {
                         reversed = true;
@@ -64,7 +64,7 @@ remove_blocks:
                     break;
                 }
             } else {
-                std::reverse(aln[i].seq.begin(), aln[i].seq.end());
+                std::reverse(aln[i].begin(), aln[i].end());
                 std::reverse(reads[i].quality.begin(), reads[i].quality.end()); 
                 if (!reversed) {
                     reversed = true;
@@ -76,9 +76,9 @@ remove_blocks:
     }
 }
 
-consensus_vector_t generate_consensus_vector(const read_set_t &reads, const read_set_t &aln, int n_threads) {
+consensus_vector_t generate_consensus_vector(const read_set_t &reads, const msa_t &aln, int n_threads) {
     // generate consensus vector
-    auto nt_info = std::vector<map_nt_info_t>(aln[0].seq.size());
+    auto nt_info = std::vector<map_nt_info_t>(aln[0].size());
     for (int i = 0; i < nt_info.size(); i++) {
         nt_info[i] = map_nt_info_t();
         nt_info[i]['A'] = pos_info_t{'A', 0.0, 0, 0};
@@ -93,7 +93,7 @@ consensus_vector_t generate_consensus_vector(const read_set_t &reads, const read
     std::vector<std::future<void>> tasks;
     for (int t = 0; t < n_threads; ++t) {
         tasks.emplace_back(std::async(std::launch::async, [t, &reads, &aln, n_threads, &mu, &nt_info] {
-            std::vector<map_nt_info_t> local_nt_info = std::vector<map_nt_info_t>(aln[0].seq.size());
+            std::vector<map_nt_info_t> local_nt_info = std::vector<map_nt_info_t>(aln[0].size());
             for (int i = 0; i < local_nt_info.size(); i++) {
                 local_nt_info[i] = map_nt_info_t();
                 local_nt_info[i]['A'] = pos_info_t{'A', 0.0, 0, 0};
@@ -107,8 +107,8 @@ consensus_vector_t generate_consensus_vector(const read_set_t &reads, const read
                 auto read_aln = aln[i];
                 int seq_pos = -1;
 
-                for (int k = 0; k < read_aln.seq.size(); k++) {
-                    char nt = read_aln.seq[k];
+                for (int k = 0; k < read_aln.size(); k++) {
+                    char nt = read_aln[k];
                     double err_p = 0.0;
                     if (nt != '-') {
                         seq_pos++;
@@ -127,7 +127,7 @@ consensus_vector_t generate_consensus_vector(const read_set_t &reads, const read
             }
 
             std::lock_guard<std::mutex> lock(mu);
-            for (int k = 0; k < aln[0].seq.size(); ++k) {
+            for (int k = 0; k < aln[0].size(); ++k) {
                 for (auto& kv : local_nt_info[k]) {
                     nt_info[k][kv.first].occ += kv.second.occ;
                     nt_info[k][kv.first].err += kv.second.err;
@@ -142,8 +142,8 @@ consensus_vector_t generate_consensus_vector(const read_set_t &reads, const read
 
     // generate mean error and consensus vector
     // std::cerr << "Aln0 ss: " << aln[0].seq.size() << std::endl;
-    auto consensus_nt = std::vector<char>(aln[0].seq.size());
-    for (int k = 0; k < aln[0].seq.size(); ++k) {
+    auto consensus_nt = std::vector<char>(aln[0].size());
+    for (int k = 0; k < aln[0].size(); ++k) {
         int max_occ = 0;
         char max_nt = 0;
 
@@ -166,7 +166,7 @@ consensus_vector_t generate_consensus_vector(const read_set_t &reads, const read
     }
 }
 
-corrected_pack_t correct_read_pack(const read_set_t &reads, const read_set_t &aln, double min_occ, double gap_occ, double err_ratio, int n_threads) {
+corrected_pack_t correct_read_pack(const read_set_t &reads, const msa_t &aln, double min_occ, double gap_occ, double err_ratio, int n_threads) {
     auto cv = generate_consensus_vector(reads, aln, n_threads);
     auto nt_info = cv.nt_info;
     auto consensus_nt = cv.consensus_nt;
@@ -175,7 +175,7 @@ corrected_pack_t correct_read_pack(const read_set_t &reads, const read_set_t &al
     auto corrected_reads = read_set_t(reads.size());
     std::mutex mu;
     std::vector<std::future<void>> tasks;
-    
+
     for (int t = 0; t < n_threads; ++t) {
         tasks.emplace_back(std::async(std::launch::async, [t, &reads, &aln, n_threads, &mu, &nt_info, &consensus_nt, min_occ, gap_occ, err_ratio, &corrected_reads] {
             for (int i = t; i < reads.size(); i+=n_threads) {
@@ -188,8 +188,8 @@ corrected_pack_t correct_read_pack(const read_set_t &reads, const read_set_t &al
                 int g2n = 0;
                 int n2n = 0;
 
-                for (int k = 0; k < read_aln.seq.size(); ++k) {
-                    char nt = read_aln.seq[k];
+                for (int k = 0; k < read_aln.size(); ++k) {
+                    char nt = read_aln[k];
                     double err_p = 0.0;
 
                     if (nt != '-') {
@@ -352,14 +352,8 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
                 int i = 0;
                 std::vector<std::string> msa;
                 graph->generate_multiple_sequence_alignment(msa);
-
-                read_set_t aln_reads = read_set_t(creads.size());
-                for (const auto& it: msa) {
-                    aln_reads[i] = read_t{creads[i].header, it, "", ""};
-                    i++;
-                }
                 
-                fix_msa_ends(creads, aln_reads);
+                fix_msa_ends(creads, msa);
 
                 // std::ofstream f;
                 // f.open("aln_" + std::to_string(a) + ".aln");
@@ -371,7 +365,7 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
 
                 // f.close();
                 
-                auto corrected_reads_pack = correct_read_pack(creads, aln_reads, min_occ, gap_occ, 30.0, 1);
+                auto corrected_reads_pack = correct_read_pack(creads, msa, min_occ, gap_occ, 30.0, 1);
                 auto corrected_reads = corrected_reads_pack.reads;
 
                 // create new MSA with corrected reads
@@ -448,7 +442,12 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
                 graph->add_alignment(alignment, it[j].seq);
             }
             
-            std::string consensus = graph->generate_consensus();
+            //std::string consensus = graph->generate_consensus();
+            std::vector<std::string> msa;
+            graph->generate_multiple_sequence_alignment(msa);
+
+            std::string consensus = "";
+
             consensus_set.push_back(read_t{"@cluster_" + std::to_string(cid) + " reads=" + std::to_string(total_reads), consensus, "+", std::string(consensus.size(), 'K')});
         } else {
             if (it.size() > 0) {
