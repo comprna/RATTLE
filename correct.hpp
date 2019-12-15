@@ -13,6 +13,9 @@ struct pos_info_t {
     int total_occ;
 };
 
+typedef std::unordered_map<char, pos_info_t> map_nt_info_t;
+typedef std::vector<std::string> msa_t;
+
 struct pack_to_correct_t {
     int original_cluster_id;
     read_set_t reads;
@@ -22,6 +25,7 @@ struct corrected_pack_t {
     int original_cluster_id;
     std::string consensus;
     read_set_t reads;
+    read_set_t uncorrected_reads;
 };
 
 struct correction_results_t {
@@ -34,9 +38,6 @@ struct consensus_vector_t {
     std::vector<map_nt_info_t> nt_info;
     std::vector<char> consensus_nt;
 };
-
-typedef std::unordered_map<char, pos_info_t> map_nt_info_t;
-typedef std::vector<std::string> msa_t;
 
 consensus_vector_t generate_consensus_vector(const read_set_t &reads, const msa_t &aln, int n_threads);
 corrected_pack_t correct_read_pack(const read_set_t &reads, const msa_t &aln, double min_occ, double gap_occ, double err_ratio, int n_threads);
