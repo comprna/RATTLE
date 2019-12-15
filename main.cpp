@@ -37,19 +37,19 @@ int main(int argc, char *argv[]) {
             { "threads", {"-t", "--threads"},
             "number of threads to use (default: 1)", 1},
             { "kmer_size", {"-k", "--kmer-size"},
-            "k-mer size for gene clustering (default: 14)", 1},
+            "k-mer size for gene clustering (default: 10)", 1},
             { "t_s", {"-s", "--score-threshold"},
-            "minimum score for two reads to be in the same gene cluster (default: 0.1)", 1},  
+            "minimum score for two reads to be in the same gene cluster (default: 0.2)", 1},  
             { "t_v", {"-v", "--max-variance"},
-            "max allowed variance for two reads to be in the same gene cluster (default: 500)", 1},
+            "max allowed variance for two reads to be in the same gene cluster (default: 1000000)", 1},
             { "iso", {"--iso"},
             "perform clustering at the isoform level", 0},
             { "iso_kmer_size", {"--iso-kmer-size"},
-            "k-mer size for isoform clustering (default: 7)", 1},
+            "k-mer size for isoform clustering (default: 11)", 1},
             { "iso_t_s", {"--iso-score-threshold"},
-            "minimum score for two reads to be in the same isoform cluster (default: 0.25)", 1},  
+            "minimum score for two reads to be in the same isoform cluster (default: 0.3)", 1},  
             { "iso_t_v", {"--iso-max-variance"},
-            "max allowed variance for two reads to be in the same isoform cluster (default: 10)", 1},
+            "max allowed variance for two reads to be in the same isoform cluster (default: 25)", 1},
             { "bv_threshold", {"-B", "--bv-start-threshold"},
             "starting threshold for the bitvector k-mer comparison (default: 0.4)", 1},  
             { "bv_min_threshold", {"-b", "--bv-end-threshold"},
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
             { "min_reads_cluster", {"-r", "--min-reads-cluster"},
             "minimum number of reads per cluster (default: 0)", 1},
             { "repr_percentile", {"-p", "--repr-percentile"},
-            "cluster representative percentile (default: 0.5)", 1},  
+            "cluster representative percentile (default: 0.15)", 1},  
             { "rna", {"--rna"},
             "use this mode if data is direct RNA (disables checking both strands)", 0},
         }};
@@ -85,20 +85,20 @@ int main(int argc, char *argv[]) {
 
         int n_threads = args["threads"].as<int>(1);
 
-        int kmer_size = args["kmer_size"].as<int>(14);
-        double t_s = args["t_s"].as<double>(0.1);
-        double t_v = args["t_v"].as<double>(500);
+        int kmer_size = args["kmer_size"].as<int>(10);
+        double t_s = args["t_s"].as<double>(0.2);
+        double t_v = args["t_v"].as<double>(1000000);
 
-        int iso_kmer_size = args["iso_kmer_size"].as<int>(7);
-        double iso_t_s = args["iso_t_s"].as<double>(0.25);
-        double iso_t_v = args["iso_t_v"].as<double>(10);
+        int iso_kmer_size = args["iso_kmer_size"].as<int>(11);
+        double iso_t_s = args["iso_t_s"].as<double>(0.3);
+        double iso_t_v = args["iso_t_v"].as<double>(25);
 
         double bv_threshold = args["bv_threshold"].as<double>(0.4);
         double bv_min_threshold = args["bv_min_threshold"].as<double>(0.2);
         double bv_falloff = args["bv_falloff"].as<double>(0.05);
 
         int min_reads_cluster = args["min_reads_cluster"].as<int>(0);
-        double repr_percentile = args["repr_percentile"].as<double>(0.5);
+        double repr_percentile = args["repr_percentile"].as<double>(0.15);
 
         bool is_rna = args["rna"];
         std::cerr << "RNA mode: " << is_rna << std::endl;
