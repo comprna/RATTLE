@@ -179,11 +179,11 @@ int main(int argc, char *argv[]) {
             { "output", {"-o", "--output"},
             "output folder (default: .)", 1},
             { "gap-occ", {"-g", "--gap-occ"},
-            "gap-occ (default: 0.6)", 1},
+            "gap-occ (default: 0.3)", 1},
             { "min-occ", {"-m", "--min-occ"},
             "min-occ (default: 0.3)", 1},
             { "split", {"-s", "--split"},
-            "split clusters into sub-clusters of size s for msa (default: 100)", 1},
+            "split clusters into sub-clusters of size s for msa (default: 200)", 1},
             { "min-reads", {"-r", "--min-reads"},
             "min reads to correct/output consensus for a cluster (default: 5)", 1},
             { "threads", {"-t", "--threads"},
@@ -226,9 +226,9 @@ int main(int argc, char *argv[]) {
         int n_threads = args["threads"].as<int>(1);
         std::ifstream in_file(args["clusters"].as<std::string>(), std::ifstream::binary);
         auto clusters = hps::from_stream<cluster_set_t>(in_file);
-        int split = args["split"].as<int>(100);
+        int split = args["split"].as<int>(200);
         double min_occ = args["min-occ"].as<double>(0.3);
-        double gap_occ = args["gap-occ"].as<double>(0.6);
+        double gap_occ = args["gap-occ"].as<double>(0.3);
         int min_reads = args["min-reads"].as<int>(5);
 
         correction_results_t correction = correct_reads(clusters, reads, min_occ, gap_occ, 30.0, split, min_reads, n_threads);
