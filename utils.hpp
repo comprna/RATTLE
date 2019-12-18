@@ -10,7 +10,8 @@ const std::unordered_map<char, char> base_complements = {
     {'A', 'T'},
     {'C', 'G'},
     {'T', 'A'},
-    {'G', 'C'}
+    {'G', 'C'},
+    {'U', 'A'}
 };
 
 const std::string str_chars = "0123456789abcdefghijklmnopqrstuvwxyz";

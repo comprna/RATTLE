@@ -26,6 +26,7 @@ const std::unordered_map<char, uint32_t> base_to_int = {
     {'A', 0},
     {'C', 1},
     {'T', 2},
+    {'U', 2},
     {'G', 3}
 };
 

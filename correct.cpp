@@ -84,6 +84,7 @@ consensus_vector_t generate_consensus_vector(const read_set_t &reads, const msa_
         nt_info[i]['A'] = pos_info_t{'A', 0.0, 0, 0};
         nt_info[i]['C'] = pos_info_t{'C', 0.0, 0, 0};
         nt_info[i]['T'] = pos_info_t{'T', 0.0, 0, 0};
+        nt_info[i]['U'] = pos_info_t{'U', 0.0, 0, 0};
         nt_info[i]['G'] = pos_info_t{'G', 0.0, 0, 0};
         nt_info[i]['-'] = pos_info_t{'-', 0.0, 0, 0};
     }
@@ -99,6 +100,7 @@ consensus_vector_t generate_consensus_vector(const read_set_t &reads, const msa_
                 local_nt_info[i]['A'] = pos_info_t{'A', 0.0, 0, 0};
                 local_nt_info[i]['C'] = pos_info_t{'C', 0.0, 0, 0};
                 local_nt_info[i]['T'] = pos_info_t{'T', 0.0, 0, 0};
+                local_nt_info[i]['U'] = pos_info_t{'U', 0.0, 0, 0};
                 local_nt_info[i]['G'] = pos_info_t{'G', 0.0, 0, 0};
                 local_nt_info[i]['-'] = pos_info_t{'-', 0.0, 0, 0};
             }
@@ -507,16 +509,16 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
             fix_msa_ends(it, msa);
 
             int i = 0;
-            std::ofstream f;
-            f.open("cons.aln");
+            // std::ofstream f;
+            // f.open("cons.aln");
 
-            for (const auto& mit: msa) {
-                f << it[i].header << std::endl;
-                f << mit << std::endl;
-                i++;
-            }
+            // for (const auto& mit: msa) {
+            //     f << it[i].header << std::endl;
+            //     f << mit << std::endl;
+            //     i++;
+            // }
 
-            f.close();
+            // f.close();
 
             auto cv = generate_consensus_vector(it, msa, n_threads);
             cv.consensus_nt.erase(std::remove(cv.consensus_nt.begin(), cv.consensus_nt.end(), '-'), cv.consensus_nt.end());
