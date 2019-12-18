@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
         sort_read_set(reads);
         std::cerr << "Done" << std::endl;
 
-        auto gene_clusters = cluster_reads(reads, kmer_size, t_s, t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, false, repr_percentile, is_rna, n_threads);
+        auto gene_clusters = cluster_reads(reads, kmer_size, t_s, t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, false, repr_percentile, is_rna, true, n_threads);
         std::ofstream out_file(args["output"].as<std::string>(".") + "/clusters.out", std::ofstream::binary);
         
         std::cerr << "Gene clustering done" << std::endl;
@@ -132,8 +132,6 @@ int main(int argc, char *argv[]) {
         cluster_set_t iso_clusters;
         int i = 0;
         for (auto &c : gene_clusters) {
-            std::cerr << i << " gene cluster to isoform clusters" << std::endl;
-
             // sort gene cluster seqs by size
             std::stable_sort(c.seqs.begin(), c.seqs.end(), [&reads](cseq_t a, cseq_t b) {
                 return a.seq_id > b.seq_id;
@@ -150,7 +148,7 @@ int main(int argc, char *argv[]) {
             }
 
             // cluster gene reads & save new iso clusters
-            auto iso_clusters_tmp = cluster_reads(gene_reads, iso_kmer_size, iso_t_s, iso_t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, false, repr_percentile, is_rna, n_threads);
+            auto iso_clusters_tmp = cluster_reads(gene_reads, iso_kmer_size, iso_t_s, iso_t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, false, repr_percentile, is_rna, false, n_threads);
             for (auto &ic : iso_clusters_tmp) {
                 cluster_t iso_cluster;
                 iso_cluster.main_seq = cseq_t{c.seqs[ic.main_seq.seq_id].seq_id, ic.main_seq.rev};
@@ -163,6 +161,7 @@ int main(int argc, char *argv[]) {
             }
 
             ++i;
+            print_progress(i, gene_clusters.size());
         }
 
         hps::to_stream(iso_clusters, out_file);
@@ -444,7 +443,7 @@ int main(int argc, char *argv[]) {
         bool is_rna = args["rna"];
 
         std::cerr << "Clustering consensus sequences..." << std::endl;
-        auto clusters = cluster_reads(reads, 6, 0.5, 25, 0.4, 0.4, 0.05, 0, false, 0.15, is_rna, n_threads);
+        auto clusters = cluster_reads(reads, 6, 0.5, 25, 0.4, 0.4, 0.05, 0, false, 0.15, is_rna, true, n_threads);
         auto correction = correct_reads(clusters, reads, 0.3, 0.3, 30.0, 200, 0, n_threads);
 
         int cid = 0;

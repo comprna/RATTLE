@@ -90,7 +90,7 @@ cseq_t get_main_seq(std::vector<cseq_t> &seqs, const read_set_t &reads, double r
     return ns;
 }
 
-cluster_set_t cluster_reads(const read_set_t &reads, int kmer_size, double t_s, double t_v, double bv_threshold, double min_bv_threshold, double bv_falloff, int min_reads_cluster, bool use_hc, double repr_percentile, bool is_rna, int n_threads) {
+cluster_set_t cluster_reads(const read_set_t &reads, int kmer_size, double t_s, double t_v, double bv_threshold, double min_bv_threshold, double bv_falloff, int min_reads_cluster, bool use_hc, double repr_percentile, bool is_rna, bool verbose, int n_threads) {
     cluster_set_t clusters;
     std::mutex mu;
     auto already_clustered = std::vector<bool>(reads.size(), false);
@@ -123,8 +123,8 @@ cluster_set_t cluster_reads(const read_set_t &reads, int kmer_size, double t_s, 
     // create initial clusters
     cluster_set_t initial_clusters;
     for (int i = 0; i < reads.size(); ++i) {
-        std::cerr << i << std::endl;
-
+        if (verbose) print_progress(i+1, reads.size());
+        
         if (already_clustered[i]) {
             continue;
         }
@@ -175,8 +175,8 @@ cluster_set_t cluster_reads(const read_set_t &reads, int kmer_size, double t_s, 
         already_clustered = std::vector<bool>(clusters.size(), false);
 
         for (int i = 0; i < clusters.size(); ++i) {
-            std::cerr << i << " " << clusters[i].main_seq.seq_id << std::endl;
-
+            if (verbose) print_progress(i+1, clusters.size());
+            
             if (already_clustered[i]) {
                 continue;
             }
@@ -244,7 +244,7 @@ cluster_set_t cluster_reads(const read_set_t &reads, int kmer_size, double t_s, 
         }
 
         clusters = tmp_clusters;
-        std::cerr << "Iteration " << current_bv_threshold << " complete" << std::endl;
+        if (verbose) std::cerr << "Iteration " << current_bv_threshold << " complete" << std::endl;
         
 	    if (last) break;
 

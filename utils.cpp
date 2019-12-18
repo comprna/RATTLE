@@ -77,7 +77,10 @@ void print_progress(int a, int b) {
         else std::cerr << " ";
     }
 
-    std::cerr << "] " << a << "/" << b << " (" << progress * 100.0 << "%)" << "\r";
+    std::cerr << "] " << a << "/" << b << " (" << progress * 100.0 << "%)";
+    if (a == b) std::cerr << std::endl;
+    else std::cerr << "\r";
+    
     std::cerr.flush();
 }
 
