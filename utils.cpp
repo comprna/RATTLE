@@ -9,7 +9,7 @@ char phred_symbol(double p) {
 
 double phred_err(char c) {
     double q = c - 33;
-    return pow10(-q/10.0);
+    return pow(10.0, -q/10.0);
 }
 
 std::string reverse_complement(std::string seq) {      
