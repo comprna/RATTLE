@@ -53,7 +53,7 @@ $ ./rattle extract_clusters -i reads.fq -c transcripts.out -o clusters --fastq
 $ ./rattle correct -i reads.fq -c clusters.out -t 24 
 ```
 
-* Polish RNA consensus sequences using 24 threads
+* Polish RNA consensus sequences and build final transcriptome using 24 threads
 ```
 $ ./rattle polish -i consensi.fq -t 24 --rna
 ```
