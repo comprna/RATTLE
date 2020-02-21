@@ -11,17 +11,13 @@
 #include <fstream>
 #include <stdio.h>
 #include <algorithm>
-#include <random>
-#include <chrono>
 #include <queue>
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
-        std::cout << "Run with mode: ./rattle <cluster|cluster_summary|extract_clusters|correct>" << std::endl;
+        std::cout << "Run with mode: ./rattle <cluster|cluster_summary|extract_clusters|correct|polish>" << std::endl;
         return EXIT_FAILURE;
     }
-
-    std::default_random_engine r_eng{static_cast<long unsigned int>(std::chrono::high_resolution_clock::now().time_since_epoch().count())};
 
     char* mode = argv[1];
     if (!strcmp(mode, "cluster")) {
