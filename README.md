@@ -1,5 +1,5 @@
 # RATTLE
-Reference-free reconstruction and error correction of transcriptomes from Nanopore long-read sequencing
+Reference-free reconstruction and quantification of transcriptomes from long-read sequencing
 
 # Requirements
 GCC with C++14 suppport
