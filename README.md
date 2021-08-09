@@ -227,5 +227,5 @@ $  ./rattle correct -i ./toyset/rna/input/sample.fastq -c ./toyset/rna/output/cl
 ```
 **polish**
 ```
-$  ./rattle polish -i ./toyset/rna/input/sample.fastq  -t 24 --rna
+$  ./rattle polish -i ./toyset/rna/input/consensi.fq -o ./toyset/rna/output/  -t 24 --rna
 ```
