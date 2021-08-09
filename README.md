@@ -188,7 +188,7 @@ Input must be the consensus sequences from the previous step. A final clustering
 
 ## Example datasets
 
-We provide an example dRNA file of 8306 reads to test Rattle in the folder named **toyset**
+We provide an example direct RNA dataset of 8306 reads to test Rattle in the folder named **toyset**. The folder contains the inputs and outputs from all analysis steps. 
 
 ## Steps
 
