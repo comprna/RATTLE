@@ -17,7 +17,7 @@ cd RATTLE
 ```
 
 # Running RATTLE
-**Warning** All the commands and parameters are still highly experimental and subject to changes in future versions
+**Warning**: The commands and parameters are still under development and may be subject to changes in future versions
 
 ## Sample commands
 Details on each command can be found below, but these are some of the most common commands used when running RATTLE.
@@ -99,7 +99,7 @@ $ ./rattle cluster -h
         use this mode if data is direct RNA (disables checking both strands)
 ```
 
-This clustering step will generate a file containing its clusters in binary format (clusters.out). To work with these clusters, the following commands are used.
+This clustering step will generate a file containing read clusters in binary format (clusters.out). To work with these clusters, the following commands are used.
 
 ## Clustering summary
 ```
@@ -138,7 +138,7 @@ $ ./rattle extract_clusters -h
 
 ```
 
-This command will generate 1 fastq/fasta file per cluster in the specified folder. This is useful to analyze particular clusters, perform alignments...
+This command will generate 1 fastq/fasta file per cluster in the specified folder. This is useful to analyze particular clusters, perform alignments, etc.
 
 ## Error correction
 ```
@@ -166,7 +166,7 @@ $ ./rattle correct -h
 This command will perform error correction based on a previous clustering. Input must be fastq (quality values are used in the correction step).
 This step will generate 3 files:
 * **corrected.fq** -> contains reads that have been corrected by RATTLE
-* **uncorrected.fq** -> contains reads that have been left uncorrected by RATTLE (for example those that are in clusters with less reads than `-r`
+* **uncorrected.fq** -> contains reads that have been left uncorrected by RATTLE (for example those that are in clusters with fewer reads than specified with `-r`
 * **consensi.fq** -> contains one consensus sequence per cluster
 
 ## Polishing step
@@ -184,9 +184,9 @@ $ ./rattle polish -h
         use this mode if data is direct RNA (disables checking both strands)
 ```
 
-Input must be consensus sequences from the previous step. A final clustering and correction is performed to output a final transcriptome with quantification
+Input must be the consensus sequences from the previous step. A final clustering and correction is performed to output a final transcriptome with quantification
 
-## Example dataset
+## Example datasets
 
 We provide an example dRNA file of 8306 reads to test Rattle in the folder named **toyset**
 
