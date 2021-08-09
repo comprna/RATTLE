@@ -1,6 +1,8 @@
 # RATTLE
 Reference-free reconstruction and quantification of transcriptomes from long-read sequencing
 
+* I. de la Rubia, A. Srivastava, J. A. Indi, S. Carbonell-Sala,  J. Lagarde,  M.M. Albà, E. Eyras [Reference-free reconstruction and quantification of transcriptomes from Nanopore long-read sequencing](https://www.biorxiv.org/content/10.1101/2020.02.08.939942v4.full)
+
 
 ----------------------------
 # Table of Contents
