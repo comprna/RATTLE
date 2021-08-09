@@ -185,3 +185,31 @@ $ ./rattle polish -h
 ```
 
 Input must be consensus sequences from the previous step. A final clustering and correction is performed to output a final transcriptome with quantification
+
+## Example dataset
+
+We provide an example dRNA file of 8306 reads to test Rattle in the folder named **toyset**
+
+## Steps
+
+**cluster**
+```
+$ ./rattle cluster -i ./toyset/rna/input/sample.fastq -t 24 -o ./toyset/rna/output --fastq --rna
+```
+**cluster_summary**
+```
+$ ./rattle cluster_summary -i ./toyset/rna/input/sample.fastq -c ./toyset/rna/output/clusters.out --fastq > ./toyset/rna/output/cluster_summary.tsv
+```
+**extract_clusters**
+```
+mkdir ./toyset/rna/output/clusters
+$  ./rattle extract_clusters -i ./toyset/rna/input/sample.fastq -c ./toyset/rna/output/clusters.out -o ./toyset/rna/output/clusters --fastq 
+```
+**correct**
+```
+$  ./rattle correct -i ./toyset/rna/input/sample.fastq -c ./toyset/rna/output/clusters.out -o ./toyset/rna/output/ -t 24
+```
+**polish**
+```
+$  ./rattle polish -i ./toyset/rna/input/sample.fastq  -t 24 --rna
+```
