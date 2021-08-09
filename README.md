@@ -10,11 +10,11 @@ Reference-free reconstruction and quantification of transcriptomes from long-rea
 
  * [Requirements](#requirements)
  * [Installation](#installation)
+ * [Quick start](#quick-start)
  * [Running RATTLE](#running-rattle)
-   * [Sample commands](#sample-commands)
    * [Clustering](#clustering)
-   * [Clustering summary](#clustering-summary)
-   * [Cluster extraction](#cluster-extraction)
+     * [Clustering summary](#clustering-summary)
+     * [Cluster extraction](#cluster-extraction)
    * [Error correction](#error-correction)
    * [Polishing step](#polishing-step)
  * [Example datasets](#example-datasets)
@@ -34,11 +34,12 @@ cd RATTLE
 ./build.sh
 ```
 
-# Running RATTLE
-**Warning**: The commands and parameters are still under development and may be subject to changes in future versions
 
-## Sample commands
-Details on each command can be found below, but these are some of the most common commands used when running RATTLE.
+
+# Quick start
+
+We provide here some of the most common commands used when running RATTLE. 
+**Note**: The commands and parameters are still under development and may be subject to changes in future versions
 
 * Cluster cDNA Nanopore reads at gene level with 24 threads
 ```
@@ -75,6 +76,10 @@ $ ./rattle correct -i reads.fq -c clusters.out -t 24
 ```
 $ ./rattle polish -i consensi.fq -t 24 --rna
 ```
+
+# Running RATTLE
+
+We provide here the details of each RATTLE command.
 
 ## Clustering
 ```
@@ -119,7 +124,7 @@ $ ./rattle cluster -h
 
 This clustering step will generate a file containing read clusters in binary format (clusters.out). To work with these clusters, the following commands are used.
 
-## Clustering summary
+### Clustering summary
 ```
 $ ./rattle cluster_summary -h
     -h, --help
@@ -138,7 +143,7 @@ This command will output a CSV file to stdout containing two columns:
 read_id, cluster_id
 ```
 
-## Cluster extraction
+### Cluster extraction
 ```
 $ ./rattle extract_clusters -h
     -h, --help
