@@ -1,6 +1,22 @@
 # RATTLE
 Reference-free reconstruction and quantification of transcriptomes from long-read sequencing
 
+
+----------------------------
+# Table of Contents
+----------------------------
+
+ * [Requirements](#requirements)
+ * [Installation](#installation)
+ * [Running RATTLE](#running-rattle)
+   * [Sample commands](#sample-commands)
+   * [Clustering](#clustering)
+   * [Clustering summary](#clustering-summary)
+   * [Cluster extraction](#cluster-extraction)
+   * [Error correction](#error-correction)
+   * [Polishing step](#polishing-step)
+ * [Example datasets](#example-datasets)
+
 # Requirements
 GCC with C++14 suppport
 
@@ -120,7 +136,7 @@ This command will output a CSV file to stdout containing two columns:
 read_id, cluster_id
 ```
 
-## Clustering extraction
+## Cluster extraction
 ```
 $ ./rattle extract_clusters -h
     -h, --help
@@ -186,7 +202,7 @@ $ ./rattle polish -h
 
 Input must be the consensus sequences from the previous step. A final clustering and correction is performed to output a final transcriptome with quantification
 
-## Example datasets
+# Example datasets
 
 We provide an example direct RNA dataset of 8306 reads to test Rattle in the folder named **toyset**. The folder contains the inputs and outputs from all analysis steps. 
 
