@@ -19,7 +19,7 @@ Reference-free reconstruction and quantification of transcriptomes from long-rea
    * [Polishing step](#polishing-step)
  * [Example datasets](#example-datasets)
    * [Human direct RNA sequencing](#human-direct-RNA-sequencing)
- * [Appendix: reference-based benchmarking](#appendix:-reference-based-benchmarking)
+ * [Appendix: reference-based benchmarking](#appendix-reference-based-benchmarking)
 
 # Requirements
 GCC with C++14 suppport
