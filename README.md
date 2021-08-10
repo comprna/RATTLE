@@ -237,14 +237,14 @@ The output file generated from this step is clusters.out at ./toyset/rna/output/
 ```
 $ ./rattle cluster_summary -i ./toyset/rna/input/sample.fastq -c ./toyset/rna/output/clusters.out --fastq > ./toyset/rna/output/cluster_summary.tsv
 ```
-The output generated from this step is a tsv file on the screen which can be directed to a file for example ./toyset/rna/output/cluster_summary.tsv
+The output generated from this step is a tsv file on the standard output which can be redirected to a file, for example ./toyset/rna/output/cluster_summary.tsv
 
 **extract_clusters**
 ```
 mkdir ./toyset/rna/output/clusters
 $  ./rattle extract_clusters -i ./toyset/rna/input/sample.fastq -c ./toyset/rna/output/clusters.out -o ./toyset/rna/output/clusters --fastq 
 ```
-The output generated from this step is a clusters folder with 1 fastq file per cluster for example ./toyset/rna/output/clusters
+The output generated from this step is a clusters folder with 1 fastq file per cluster, for example ./toyset/rna/output/clusters
 
 **correct**
 ```
