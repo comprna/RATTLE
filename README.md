@@ -18,6 +18,7 @@ Reference-free reconstruction and quantification of transcriptomes from long-rea
    * [Error correction](#error-correction)
    * [Polishing step](#polishing-step)
  * [Example datasets](#example-datasets)
+   * [Human direct RNA sequencing](#human-direct-RNA-sequencing)
 
 # Requirements
 GCC with C++14 suppport
@@ -221,9 +222,9 @@ Input must be the consensus sequences from the previous step.
 
 We provide below example datasets and rattle commands. We make available all input and output files in the folder **toyset**. 
 
-## Human direct RNA sequencing sample dataset
+## Human direct RNA sequencing
 
-We provide here as an example the analysis of an example direct RNA dataset of 8306 reads to test Rattle in the folder named **toyset**. The folder contains the inputs and outputs from all analysis steps. 
+We provide here as an example the analysis of a direct RNA sequencing dataset of 8306 reads. These are reads from an experiment in heart tissue used in the RATTLE manuscript and is available from the European Nucleotide Archive (ENA) under the umbrella study PRJEB40410 (https://www.ebi.ac.uk/ena/browser/view/PRJEB40410). The sample reads used in this example correspond to the subset that mapped to the human chromosome 20 with quality 60 (uniquely mapping reads). This input file is available at **./toyset/rna/input/sample.fastq**. We describe below the steps to build a reference-free transcriptome with RATTLE from these reads:
 
 **cluster**
 ```
