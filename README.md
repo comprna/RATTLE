@@ -198,6 +198,9 @@ This step will generate 3 files:
 * **consensi.fq** -> contains one consensus sequence per cluster
 
 ## Polishing step
+
+In this last RATTLE step, transcript consensus sequences and gene definitions are reassessed to perform a cluster refinement using the same RATTLE metrics, and to obtain a final set of transcripts, consensus sequences, and abundances.
+
 ```
 $ ./rattle polish -h
     -h, --help
@@ -212,13 +215,15 @@ $ ./rattle polish -h
         use this mode if data is direct RNA (disables checking both strands)
 ```
 
-Input must be the consensus sequences from the previous step. A final clustering and correction is performed to output a final transcriptome with quantification
+Input must be the consensus sequences from the previous step.
 
 # Example datasets
 
-We provide an example direct RNA dataset of 8306 reads to test Rattle in the folder named **toyset**. The folder contains the inputs and outputs from all analysis steps. 
+We provide below example datasets and rattle commands. We make available all input and output files in the folder **toyset**. 
 
-## Steps
+## Human direct RNA sequencing sample dataset
+
+We provide here as an example the analysis of an example direct RNA dataset of 8306 reads to test Rattle in the folder named **toyset**. The folder contains the inputs and outputs from all analysis steps. 
 
 **cluster**
 ```
