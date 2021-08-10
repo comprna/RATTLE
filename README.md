@@ -186,7 +186,7 @@ $ ./rattle correct -h
     -m, --min-occ
         min-occ (default: 0.3)
     -s, --split
-        split clusters into sub-clusters of size s for msa (default: 200)
+        split clusters into sub-clusters of size s for the multiple sequence alignment (default: 200)
     -r, --min-reads
         min reads to correct/output consensus for a cluster (default: 5)
     -t, --threads
@@ -194,9 +194,9 @@ $ ./rattle correct -h
 ```
 
 This step will generate 3 files:
-* **corrected.fq** -> contains reads that have been corrected by RATTLE
-* **uncorrected.fq** -> contains reads that have been left uncorrected by RATTLE (for example those that are in clusters with fewer reads than specified with `-r`
-* **consensi.fq** -> contains one consensus sequence per cluster
+* **corrected.fq**: contains reads that have been corrected by RATTLE
+* **uncorrected.fq**: contains reads that have been left uncorrected by RATTLE. These will generally be those in clusters with fewer reads than specified with the option `-r`
+* **consensi.fq**: contains one consensus sequence per transcript cluster
 
 ## Polishing step
 
