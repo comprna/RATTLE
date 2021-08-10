@@ -258,6 +258,16 @@ $  ./rattle polish -i ./toyset/rna/input/consensi.fq -o ./toyset/rna/output/  -t
 ```
 The output generated from this step is the transcriptome.fq at ./toyset/rna/output/
 
+**run time on example dataset** 
+
+| command          | 1 thread      | 24 threads    |	
+| :----------------|:-------------:| :-------------|
+| cluster 	       |	0m21.302s    |0m8.457s       |
+| cluster_summary  | 0m0.068s      |-              |
+| extract_clusters |	0m0.079s	   |-              |  
+| correct  		     | 1m16.180s	   | 0m15.939s     |
+| polish  		     | 0m2.615s	     | 0m2.693s      |
+
 # Appendix: reference-based benchmarking
 
 We describe below the tool **ss_check.py** for the accuracy benchmarking of reads and transcripts mapped to a reference genome. 
