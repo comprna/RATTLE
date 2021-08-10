@@ -33,7 +33,7 @@ git clone --recurse-submodules https://github.com/comprna/RATTLE
 cd RATTLE
 ./build.sh
 ```
-
+(this will generally take less than 1 minute)
 
 
 # Quick start
