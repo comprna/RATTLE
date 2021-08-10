@@ -19,6 +19,7 @@ Reference-free reconstruction and quantification of transcriptomes from long-rea
    * [Polishing step](#polishing-step)
  * [Example datasets](#example-datasets)
    * [Human direct RNA sequencing](#human-direct-RNA-sequencing)
+ * [Appendix:reference-based benchmarking](#appendix:reference-based-benchmarking)
 
 # Requirements
 GCC with C++14 suppport
@@ -247,3 +248,7 @@ $  ./rattle correct -i ./toyset/rna/input/sample.fastq -c ./toyset/rna/output/cl
 ```
 $  ./rattle polish -i ./toyset/rna/input/consensi.fq -o ./toyset/rna/output/  -t 24 --rna
 ```
+
+# Appendix:reference-based benchmarking
+
+We describe below the tool **ss_check.py** for the accuracy benchmarking of reads and transcripts mapped to a reference genome. 
