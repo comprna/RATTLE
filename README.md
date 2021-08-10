@@ -231,23 +231,32 @@ We provide here as an example the analysis of a direct RNA sequencing dataset of
 ```
 $ ./rattle cluster -i ./toyset/rna/input/sample.fastq -t 24 -o ./toyset/rna/output --fastq --rna
 ```
+The output file generated from this step is clusters.out at ./toyset/rna/output/
+
 **cluster_summary**
 ```
 $ ./rattle cluster_summary -i ./toyset/rna/input/sample.fastq -c ./toyset/rna/output/clusters.out --fastq > ./toyset/rna/output/cluster_summary.tsv
 ```
+The output generated from this step is a tsv file on the screen which can be directed to a file for example ./toyset/rna/output/cluster_summary.tsv
+
 **extract_clusters**
 ```
 mkdir ./toyset/rna/output/clusters
 $  ./rattle extract_clusters -i ./toyset/rna/input/sample.fastq -c ./toyset/rna/output/clusters.out -o ./toyset/rna/output/clusters --fastq 
 ```
+The output generated from this step is a clusters folder with 1 fastq file per cluster for example ./toyset/rna/output/clusters
+
 **correct**
 ```
 $  ./rattle correct -i ./toyset/rna/input/sample.fastq -c ./toyset/rna/output/clusters.out -o ./toyset/rna/output/ -t 24
 ```
+The output generated from this step are three files uncorrected.fq, corrected.fq and consensi.fq at ./toyset/rna/output/
+
 **polish**
 ```
 $  ./rattle polish -i ./toyset/rna/input/consensi.fq -o ./toyset/rna/output/  -t 24 --rna
 ```
+The output generated from this step is the transcriptome.fq at ./toyset/rna/output/
 
 # Appendix: reference-based benchmarking
 
