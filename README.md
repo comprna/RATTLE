@@ -167,6 +167,9 @@ $ ./rattle extract_clusters -h
 This command will generate 1 fastq/fasta file per cluster in the specified folder. This is useful to analyze particular clusters, perform alignments, etc.
 
 ## Error correction
+
+This is the second main step in RATTLE. This command will perform error correction in each of the transcript clusters generated before. The command requires as input the previous clusters (`-c` option) and the original reads in fastq form (`-i` option), since the quality values are used in the correction step.
+
 ```
 $ ./rattle correct -h
     -h, --help
@@ -189,7 +192,6 @@ $ ./rattle correct -h
         number of threads to use (default: 1)
 ```
 
-This command will perform error correction based on a previous clustering. Input must be fastq (quality values are used in the correction step).
 This step will generate 3 files:
 * **corrected.fq** -> contains reads that have been corrected by RATTLE
 * **uncorrected.fq** -> contains reads that have been left uncorrected by RATTLE (for example those that are in clusters with fewer reads than specified with `-r`
