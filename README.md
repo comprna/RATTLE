@@ -82,6 +82,9 @@ $ ./rattle polish -i consensi.fq -t 24 --rna
 We provide here the details of each RATTLE command.
 
 ## Clustering
+
+This is the first and most important step in RATTLE. This command will generate the first set of read ckusters representing potential genes and transcripts.
+
 ```
 $ ./rattle cluster -h
     -h, --help
