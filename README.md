@@ -20,6 +20,7 @@ Reference-free reconstruction and quantification of transcriptomes from long-rea
  * [Example datasets](#example-datasets)
    * [Human direct RNA sequencing](#human-direct-RNA-sequencing)
  * [Appendix: reference-based benchmarking](#appendix-reference-based-benchmarking)
+   * [ssCheck](#sscheck)
    * [Example dataset](#example-dataset)
 # Requirements
 GCC with C++14 suppport
@@ -292,7 +293,7 @@ ssCheck works by comparing annotation features in the mapped reads/sequences (ex
 
 We developed ssCheck to be able to calculate the read-precision. Other methods merge identical intron-chains with different identifiers, which precludes this calculation.
 
-## Example datasets
+## Example dataset
 
 We provide below example datasets and ss_check.py commands. We make available all input and output files in the folder **toyset/sscheck**. The inputs are based on the same dataset described above for the RATTLE toyset. 
 This input files are available at **./toyset/sscheck/input**. We describe below the steps to run ss_check.py:
