@@ -221,7 +221,7 @@ Input must be the consensus sequences from the previous step.
 
 # Example datasets
 
-We provide below example datasets and rattle commands. We make available all input and output files in the folder **toyset**. 
+We provide below example datasets and rattle commands. We make available all input and output files in the folder **toyset/rna**. 
 
 ## Human direct RNA sequencing
 
@@ -285,4 +285,27 @@ optional arguments:
   -h, --help   show this help message and exit
   --beautiful  Beautiful output (instead of csv)
 ```
+# Example datasets
+We provide below example datasets and ss_check.py commands. We make available all input and output files in the folder **toyset/sscheck**. 
+The input file is same as used in for RATTLE toyset. This input files are available at **./toyset/sscheck/input**. We describe below the steps to run ss_check.py:
 
+**sam2paf**
+**We use minimap2 paftools.js to convert sam to paf. Please make sure minimap2 is installed and in yout PATH to use the below command.
+```
+$ ./minimap2/misc/paftools.js sam2paf ./toyset/sscheck/input/sample.sam > ./toyset/sscheck/input/sample.paf
+```
+Both the files sample.sam and sample.paf are at ./toyset/sscheck/input/
+
+**ss_check with csv output**
+```
+$ python ./misc/ss_check.py  ./toyset/sscheck/input/sample_ref.gtf ./toyset/sscheck/input/sample.paf > ./toyset/sscheck/output/sample_output_sscheck.csv
+```
+The output generated from this step is a csv file for example ./toyset/sscheck/output/sample_output_sscheck.csv
+
+
+**ss_check with beautiful output**
+```
+$ python ./misc/ss_check.py --beautiful ./toyset/sscheck/input/sample_ref.gtf ./toyset/sscheck/input/sample.paf > ./toyset/sscheck/output/sample_output_sscheck.beautiful
+```
+The output generated from this step is a beautiful output (instead of csv) for example ./toyset/sscheck/output/sample_output_sscheck.beautiful
+Note here the sample_ref.gtf is the gtf file selected for chr20 from Homo_sapiens.GRCh38.99.gtf.
