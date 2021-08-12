@@ -20,7 +20,7 @@ Reference-free reconstruction and quantification of transcriptomes from long-rea
  * [Example datasets](#example-datasets)
    * [Human direct RNA sequencing](#human-direct-RNA-sequencing)
  * [Appendix: reference-based benchmarking](#appendix-reference-based-benchmarking)
-
+   * [Example dataset](#example-dataset)
 # Requirements
 GCC with C++14 suppport
 
@@ -270,7 +270,9 @@ The output generated from this step is the transcriptome.fq at ./toyset/rna/outp
 
 # Appendix: reference-based benchmarking
 
-We describe below the tool **ss_check.py** for the accuracy benchmarking of reads and transcripts mapped to a reference genome. 
+## ssCheck
+
+We describe here the tool **ssCheck** for the accuracy benchmarking of reads and transcripts mapped to a reference genome. ssCheck reads as input an alignment file in paf format and an annotation file in GTF format to compare with:
 
 ```
 python ss_check.py [-h] [--beautiful] ref.gtf aln.paf
@@ -285,29 +287,48 @@ optional arguments:
   -h, --help   show this help message and exit
   --beautiful  Beautiful output (instead of csv)
 ```
-# Example datasets
-We provide below example datasets and ss_check.py commands. We make available all input and output files in the folder **toyset/sscheck**. 
-The input file is same as used in for RATTLE toyset. This input files are available at **./toyset/sscheck/input**. We describe below the steps to run ss_check.py:
+
+ssCheck works by comparing annotation features in the mapped reads/sequences (exons, introns, exon-chains, intron-chains) with same features in the annotation and calculates the number of unique features as well as the total number of features predicted in the mapped reads. An intron-chain is defined as an ordered sequence of introns in an annotated transcript or mapped read. Similarly for exon-chains. The recall is calculated as the fraction of unique annotated features correctly found; precision is calculated as the fraction of unique predicted features that were in the annotation and read-precision is calculated as the fraction of the total number of predicted features in reads that corresponded to annotated features. Read-precision is affected by abundance levels but better reflects the accuracy per read. 
+
+We developed ssCheck to be able to calculate the read-precision. Other methods merge identical intron-chains with different identifiers, which precludes this calculation.
+
+## Example datasets
+
+We provide below example datasets and ss_check.py commands. We make available all input and output files in the folder **toyset/sscheck**. The inputs are based on the same dataset described above for the RATTLE toyset. 
+This input files are available at **./toyset/sscheck/input**. We describe below the steps to run ss_check.py:
 
 **sam2paf**
 
-**We use minimap2 paftools.js to convert sam to paf. Please make sure minimap2 is installed and in yout PATH to use the below command.**
+We first use minimap2 paftools.js to convert the mapped reads in sam **format** to **paf** format. Please make sure minimap2 is installed and in yout PATH to use the below command.**
 ```
 $ ./minimap2/misc/paftools.js sam2paf ./toyset/sscheck/input/sample.sam > ./toyset/sscheck/input/sample.paf
 ```
-Both the files sample.sam and sample.paf are at ./toyset/sscheck/input/
+Both the files sample.sam and sample.paf are available at ./toyset/sscheck/input/
 
 **ss_check with csv output**
 ```
 $ python ./misc/ss_check.py  ./toyset/sscheck/input/sample_ref.gtf ./toyset/sscheck/input/sample.paf > ./toyset/sscheck/output/sample_output_sscheck.csv
 ```
 The output generated from this step is a csv file for example ./toyset/sscheck/output/sample_output_sscheck.csv
-
+The annotation file **sample_ref.gtf** is available at ./toyset/sscheck/input/ and corresponds to the GTF file selected for chr20 from Homo_sapiens.GRCh38.99.gtf.
 
 **ss_check with beautiful output**
 ```
 $ python ./misc/ss_check.py --beautiful ./toyset/sscheck/input/sample_ref.gtf ./toyset/sscheck/input/sample.paf > ./toyset/sscheck/output/sample_output_sscheck.beautiful
 ```
-The output generated from this step is a beautiful output (instead of csv) for example ./toyset/sscheck/output/sample_output_sscheck.beautiful
+The output generated in this case is easier to read. The output file for this command can be found in  ./toyset/sscheck/output/sample_output_sscheck.beautiful
 
-Note here the sample_ref.gtf is the gtf file selected for chr20 from Homo_sapiens.GRCh38.99.gtf.
+For instance, for introns:
+
+```
+########################################
+#             INTRON LEVEL             #
+########################################
+Introns in reference: 17769
+Unique introns in reads: 1721
+Reference introns found: 952/17769 (5.36%)
+Total introns in reads: 15323
+--> Known: 10121 (66.05%)
+--> Novel: 5202 (33.95%)
+```
+
