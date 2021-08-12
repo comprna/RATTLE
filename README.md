@@ -271,3 +271,18 @@ The output generated from this step is the transcriptome.fq at ./toyset/rna/outp
 # Appendix: reference-based benchmarking
 
 We describe below the tool **ss_check.py** for the accuracy benchmarking of reads and transcripts mapped to a reference genome. 
+
+```
+python ss_check.py [-h] [--beautiful] ref.gtf aln.paf
+
+Calculate known/novel splice sites from PAF alignment and ref GTF file
+
+positional arguments:
+  ref.gtf      Reference GTF file (required)
+  aln.paf      Alignment file in PAF format (required)
+
+optional arguments:
+  -h, --help   show this help message and exit
+  --beautiful  Beautiful output (instead of csv)
+```
+
