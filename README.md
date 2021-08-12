@@ -290,7 +290,8 @@ We provide below example datasets and ss_check.py commands. We make available al
 The input file is same as used in for RATTLE toyset. This input files are available at **./toyset/sscheck/input**. We describe below the steps to run ss_check.py:
 
 **sam2paf**
-**We use minimap2 paftools.js to convert sam to paf. Please make sure minimap2 is installed and in yout PATH to use the below command.
+
+**We use minimap2 paftools.js to convert sam to paf. Please make sure minimap2 is installed and in yout PATH to use the below command.**
 ```
 $ ./minimap2/misc/paftools.js sam2paf ./toyset/sscheck/input/sample.sam > ./toyset/sscheck/input/sample.paf
 ```
@@ -308,4 +309,5 @@ The output generated from this step is a csv file for example ./toyset/sscheck/o
 $ python ./misc/ss_check.py --beautiful ./toyset/sscheck/input/sample_ref.gtf ./toyset/sscheck/input/sample.paf > ./toyset/sscheck/output/sample_output_sscheck.beautiful
 ```
 The output generated from this step is a beautiful output (instead of csv) for example ./toyset/sscheck/output/sample_output_sscheck.beautiful
+
 Note here the sample_ref.gtf is the gtf file selected for chr20 from Homo_sapiens.GRCh38.99.gtf.
