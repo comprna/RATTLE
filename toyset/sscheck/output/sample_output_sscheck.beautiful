@@ -1,0 +1,45 @@
+
+
+########################################
+#             INTRON LEVEL             #
+########################################
+Introns in reference: 17769
+Unique introns in reads: 1721
+Reference introns found: 952/17769 (5.36%)
+Total introns in reads: 15323
+--> Known: 10121 (66.05%)
+--> Novel: 5202 (33.95%)
+
+
+########################################
+#              EXON LEVEL              #
+########################################
+Exons in reference: 14366
+Unique exons in reads: 8951
+Reference exons found: 1238/14366 (8.62%)
+Total exons in reads: 23695
+--> Known: 11680 (49.29%)
+--> Novel: 12015 (50.71%)
+
+
+########################################
+#   TRANSCRIPT LEVEL (INTRON CHAIN)    #
+########################################
+Transcripts in reference: 25
+Unique transcripts in reads: 1082
+Reference transcripts found: 0/25 (0.00%)
+Total transcripts in reads: 4658
+--> Known: 0 (0.00%)
+--> Novel: 4658 (100.00%)
+
+
+########################################
+#    TRANSCRIPT LEVEL (EXON CHAIN)     #
+########################################
+Transcripts in reference: 25
+Unique transcripts in reads: 7399
+Reference transcripts found: 0/25 (0.00%)
+Total transcripts in reads: 8372
+--> Known: 0 (0.00%)
+--> Novel: 8372 (100.00%)
+

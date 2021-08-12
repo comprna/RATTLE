@@ -1,0 +1,5 @@
+level,known_in_ref,unique_in_reads,ref_found,p_ref_found,total_in_reads,known_in_total_reads,novel_in_total_reads,p_known_in_total_reads,p_novel_in_total_reads
+intron,17769,1721,952,0.05,15323,10121,5202,0.66,0.34
+exon,14366,8951,1238,0.09,23695,11680,12015,0.49,0.51
+intron_chain,25,1082,0,0.00,4658,0,4658,0.00,1.00
+exon_chain,25,7399,0,0.00,8372,0,8372,0.00,1.00
