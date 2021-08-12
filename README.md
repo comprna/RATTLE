@@ -311,7 +311,7 @@ Both the files sample.sam and sample.paf are available at ./toyset/sscheck/input
 $ python ./misc/ss_check.py  ./toyset/sscheck/input/sample_ref.gtf ./toyset/sscheck/input/sample.paf > ./toyset/sscheck/output/sample_output_sscheck.csv
 ```
 The output generated from this step is a csv file for example ./toyset/sscheck/output/sample_output_sscheck.csv
-The annotation file **sample_ref.gtf** is available at ./toyset/sscheck/input/ and corresponds to the GTF file selected for chr20 from Homo_sapiens.GRCh38.99.gtf.
+The annotation file **sample_ref.gtf** is available at ./toyset/sscheck/input/ and corresponds to the GTF file selected for chr20 from Homo_sapiens.GRCh38.99.gtf downloaded from http://ftp.ensembl.org/pub/release-99/gtf/homo_sapiens/.
 
 **ss_check with beautiful output**
 ```
