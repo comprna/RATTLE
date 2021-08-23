@@ -53,10 +53,12 @@ remove_blocks:
                     }
 
                     reads[i].quality.erase(0, sz);
+                    reads[i].seq.erase(0, sz);
                     pos = end_pos;
                 } else {
                     std::reverse(aln[i].begin(), aln[i].end());
                     std::reverse(reads[i].quality.begin(), reads[i].quality.end());
+                    std::reverse(reads[i].seq.begin(), reads[i].seq.end());
                     if (!reversed) {
                         reversed = true;
                         goto remove_blocks;
@@ -65,7 +67,8 @@ remove_blocks:
                 }
             } else {
                 std::reverse(aln[i].begin(), aln[i].end());
-                std::reverse(reads[i].quality.begin(), reads[i].quality.end()); 
+                std::reverse(reads[i].quality.begin(), reads[i].quality.end());
+                std::reverse(reads[i].seq.begin(), reads[i].seq.end());
                 if (!reversed) {
                     reversed = true;
                     goto remove_blocks;
@@ -404,6 +407,20 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
                 auto corrected_reads = corrected_reads_pack.reads;
                 auto uncorrected_reads = corrected_reads_pack.uncorrected_reads;
 
+                {
+                    std::lock_guard<std::mutex> lock(mu);
+                    for (int i = 0; i < corrected_reads.size(); ++i) {
+                        corrected_read_set.push_back(corrected_reads[i]);
+                    }
+
+                    // add uncorrected reads from the pack
+                    for (int i = 0; i < uncorrected_reads.size(); ++i) {
+                        uncorrected_read_set.push_back(uncorrected_reads[i]);
+                    }
+
+                    corrected+=creads.size();
+                }
+
                 // create new MSA with corrected reads
                 sort_read_set(corrected_reads);
                 graph = spoa::createGraph();
@@ -453,24 +470,14 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
 
                 {
                     std::lock_guard<std::mutex> lock(mu);
-                    for (int i = 0; i < corrected_reads.size(); ++i) {
-                        corrected_read_set.push_back(corrected_reads[i]);
-                    }
-
-                    // add uncorrected reads from the pack
-                    for (int i = 0; i < uncorrected_reads.size(); ++i) {
-                        uncorrected_read_set.push_back(uncorrected_reads[i]);
-                    }
-
-                    corrected+=creads.size();
                     
                     // save in consensus header the number of reads of this cluster
                     consensi[pack.original_cluster_id].push_back(read_t{std::to_string(creads.size()), consensus, "+", std::string(consensus.size(), 'K')});
 
-                    // sort corrected cluster
-                    std::stable_sort(corrected_reads.begin(), corrected_reads.end(), [](read_t a, read_t b) {
-                        return a.seq.size() > b.seq.size();
-                    });
+                    // // sort corrected cluster
+                    // std::stable_sort(corrected_reads.begin(), corrected_reads.end(), [](read_t a, read_t b) {
+                    //     return a.seq.size() > b.seq.size();
+                    // });
                 }
             }
         }));
