@@ -255,7 +255,7 @@ The output generated from this step are three files uncorrected.fq, corrected.fq
 
 **polish**
 ```
-$  ./rattle polish -i ./toyset/rna/input/consensi.fq -o ./toyset/rna/output/  -t 24 --rna
+$  ./rattle polish -i ./toyset/rna/output/consensi.fq -o ./toyset/rna/output/  -t 24 --rna
 ```
 The output generated from this step is the transcriptome.fq at ./toyset/rna/output/
 
