@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include <algorithm>
 #include <queue>
+#include <unistd.h>
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -99,8 +100,11 @@ int main(int argc, char *argv[]) {
         bool is_rna = args["rna"];
         std::cerr << "RNA mode: " << is_rna << std::endl;
 
-        // TODO: handle non-existing file
         std::cerr << "Reading fasta file... ";
+        if(access(args["input"], F_OK )){
+            std::cerr << "\nError: Input file not found! \n";
+            return EXIT_FAILURE;
+        }
         
         read_set_t reads;
         if (args["fastq"]) {
@@ -211,8 +215,11 @@ int main(int argc, char *argv[]) {
         }
 
         std::cerr << "Reading fasta file... ";
+        if(access(args["input"], F_OK )){
+            std::cerr << "\nError: Input file not found! \n";
+            return EXIT_FAILURE;
+        }
         
-        // TODO: handle non-existing file
         read_set_t reads = read_fastq_file(args["input"]);
 
         sort_read_set(reads);
@@ -272,8 +279,11 @@ int main(int argc, char *argv[]) {
         }
 
         std::cerr << "Reading fasta file... ";
+        if(access(args["input"], F_OK )){
+            std::cerr << "\nError: Input file not found! \n";
+            return EXIT_FAILURE;
+        }
         
-        // TODO: handle non-existing file
         read_set_t reads;
         if (args["fastq"]) {
             reads = read_fastq_file(args["input"]);
@@ -337,8 +347,11 @@ int main(int argc, char *argv[]) {
         }
 
         std::cerr << "Reading fasta file... ";
+        if(access(args["input"], F_OK )){
+            std::cerr << "\nError: Input file not found! \n";
+            return EXIT_FAILURE;
+        }
         
-        // TODO: handle non-existing file
         read_set_t reads;
         if (args["fastq"]) {
             reads = read_fastq_file(args["input"]);
@@ -428,8 +441,11 @@ int main(int argc, char *argv[]) {
         }
 
         std::cerr << "Reading fasta file... ";
+        if(access(args["input"], F_OK )){
+            std::cerr << "\nError: Input file not found! \n";
+            return EXIT_FAILURE;
+        }
         
-        // TODO: handle non-existing file
         read_set_t reads = read_fastq_file(args["input"]);
 
         sort_read_set(reads);
