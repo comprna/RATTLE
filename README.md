@@ -72,7 +72,7 @@ $ ./rattle extract_clusters -i reads.fq -c transcripts.out -o clusters --fastq
 
 * Correct reads with 24 threads using isoform clusters
 ```
-$ ./rattle correct -i reads.fq -c clusters.out -t 24 
+$ ./rattle correct -i reads.fq -c clusters.out -t 24 --fastq
 ```
 
 * Polish RNA consensus sequences and build final transcriptome using 24 threads
@@ -86,7 +86,7 @@ We provide here the details of each RATTLE command.
 
 ## Clustering
 
-This is the first and most important step in RATTLE. This command will generate the first set of read ckusters representing potential genes and transcripts.
+This is the first and most important step in RATTLE. This command will generate the first set of read clusters representing potential genes and transcripts.
 
 ```
 $ ./rattle cluster -h
@@ -193,6 +193,8 @@ $ ./rattle correct -h
         min reads to correct/output consensus for a cluster (default: 5)
     -t, --threads
         number of threads to use (default: 1)
+    --fastq
+        whether input should be in fastq format (instead of fasta)
 ```
 
 This step will generate 3 files:
@@ -249,7 +251,7 @@ The output generated from this step is a clusters folder with 1 fastq file per c
 
 **correct**
 ```
-$  ./rattle correct -i ./toyset/rna/input/sample.fastq -c ./toyset/rna/output/clusters.out -o ./toyset/rna/output/ -t 24
+$  ./rattle correct -i ./toyset/rna/input/sample.fastq -c ./toyset/rna/output/clusters.out -o ./toyset/rna/output/ -t 24 --fastq
 ```
 The output generated from this step are three files uncorrected.fq, corrected.fq and consensi.fq at ./toyset/rna/output/
 
