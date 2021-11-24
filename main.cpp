@@ -173,6 +173,8 @@ int main(int argc, char *argv[]) {
             "shows this help message", 0},
             { "input", {"-i", "--input"},
             "input fasta/fastq file (required)", 1},
+            { "fastq", {"--fastq"},
+            "whether input and output should be in fastq format (instead of fasta)", 0},
             { "clusters", {"-c", "--clusters"},
             "clusters file (required)", 1},
             { "output", {"-o", "--output"},
@@ -220,7 +222,12 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
         
-        read_set_t reads = read_fastq_file(args["input"]);
+        read_set_t reads;
+        if (args["fastq"]) {
+            reads = read_fastq_file(args["input"]);
+        } else {
+            reads = read_fasta_file(args["input"]);
+        }
 
         sort_read_set(reads);
         std::cerr << "Done" << std::endl;
