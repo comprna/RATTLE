@@ -87,24 +87,88 @@ read_kmers_t extract_minimizers_from_read(std::string read, int kmer_size, int w
 
 // k1 and k2 are sorted by pair first (kmer hash)
 std::vector<kmer_match_t> get_common_kmers(const std::vector<kmer_t> &k1, const std::vector<kmer_t> &k2) {
-    int p1 = 0;
-    int p2 = 0;
-    std::vector<kmer_match_t> intersection;
-    intersection.reserve(k1.size());
+    /**
+     * This is the original code
+    **/
+    // int p1 = 0;
+    // int p2 = 0;
+    // std::vector<kmer_match_t> intersection;
+    // intersection.reserve(k1.size());
 
-    while (p1 < k1.size() && p2 < k2.size()) {
-        while (p2 < k2.size() && k2[p2].first < k1[p1].first) {
-            ++p2;
+    // while (p1 < k1.size() && p2 < k2.size()) {
+    //     while (p2 < k2.size() && k2[p2].first < k1[p1].first) {
+    //         ++p2;
+    //     }
+
+    //     int p2t = p2;
+    //     while (p2 < k2.size() && k2[p2].first == k1[p1].first) {
+    //         intersection.push_back(kmer_match_t(k1[p1].second, k2[p2].second));
+    //         ++p2;
+    //     }
+    //     p2 = p2t;
+    //     ++p1;
+    // }
+
+
+    /**
+     *  This is the method is inspired by the original one
+     *  Reduce running time by 4.78s (50.77s -> 45.99s, 1 thread, Toyset dataset)
+     *  compare to the original method
+    **/
+    int p1 = k1.size() - 1;
+    int p2 = k2.size() - 1;
+    std::vector<kmer_match_t> intersection;
+    intersection.reserve(p1 - 1);
+
+    while (p1 >= 0 && p2 >= 0) {
+        while (p2 >= 0 && k2[p2].first > k1[p1].first) {
+            --p2;
         }
 
         int p2t = p2;
-        while (p2 < k2.size() && k2[p2].first == k1[p1].first) {
+        while (p2 >= 0 && k2[p2].first == k1[p1].first) {
             intersection.push_back(kmer_match_t(k1[p1].second, k2[p2].second));
-            ++p2;
+            --p2;
         }
         p2 = p2t;
-        ++p1;
+        --p1;
     }
+
+
+    /**
+     *  Brand New Method
+     *  Ruduce running time by 2.57s (50.77s -> 48.2s, 1 thread, Toyset dataset) 
+     *  compare to the original method
+     *  and decrease one variable usage
+    **/
+    // int p1 = k1.size() - 1;
+    // int p2 = k2.size() - 1;
+    // std::vector<kmer_match_t> intersection;
+    // intersection.reserve(p1 - 1);
+
+    // while(p1 >= 0 && p2 >= 0){
+    //     if(k1[p1].first < k2[0].first || k2[p2].first < k1[0].first){
+    //         break;
+    //     }
+
+    //     if(k1[p1].first > k2[p2].first){
+    //         p1--;
+    //     } else if(k1[p1].first < k2[p2].first){
+    //         p2--;
+    //     } else {
+    //         intersection.push_back(kmer_match_t(k1[p1].second, k2[p2].second));
+    //         while((p1 - 1) >= 0 && k1[p1 - 1].first == k2[p2].first){
+    //             p1--;
+    //             intersection.push_back(kmer_match_t(k1[p1].second, k2[p2].second));               
+    //         }
+    //         while((p2 - 1) >= 0 && k1[p1].first == k2[p2 - 1].first){
+    //             p2--;
+    //             intersection.push_back(kmer_match_t(k1[p1].second, k2[p2].second));               
+    //         }
+    //         p1--;
+    //         p2--;
+    //     }
+    // }
 
     std::sort(intersection.begin(), intersection.end());
     return intersection;
