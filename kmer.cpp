@@ -118,7 +118,7 @@ std::vector<kmer_match_t> get_common_kmers(const std::vector<kmer_t> &k1, const 
     int p1 = k1.size() - 1;
     int p2 = k2.size() - 1;
     std::vector<kmer_match_t> intersection;
-    intersection.reserve(p1 - 1);
+    intersection.reserve(p1 + 1);
 
     while (p1 >= 0 && p2 >= 0) {
         while (p2 >= 0 && k2[p2].first > k1[p1].first) {
