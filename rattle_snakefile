@@ -1,0 +1,27 @@
+rule rattle_cluster:
+        input:
+                 "toyset/rna/input/sample.fastq"
+        output:
+                "toyset/rna/snakemake_output/clusters.out"
+        shell:
+                 """./rattle cluster -i {input} -t 24 -o toyset/rna/snakemake_output --fastq --rna """
+
+rule rattle_correct:
+        input:
+                clusters="toyset/rna/snakemake_output/clusters.out",
+                fastq="toyset/rna/input/sample.fastq"
+        output:
+                "toyset/rna/snakemake_output/corrected.fq",
+                "toyset/rna/snakemake_output/uncorrected.fq",
+                "toyset/rna/snakemake_output/consensi.fq"
+
+        shell:
+                 """./rattle correct -i {input.fastq} -c {input.clusters} -o toyset/rna/snakemake_output -t 24 --fastq """
+
+rule rattle_polish:
+        input:
+                "toyset/rna/snakemake_output/consensi.fq"
+        output:
+                "toyset/rna/snakemake_output/transcriptome.fq"
+        shell:
+                 """./rattle polish -i {input} -o toyset/rna/snakemake_output -t24 --rna """
