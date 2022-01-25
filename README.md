@@ -339,7 +339,7 @@ Total introns in reads: 15323
 User can easly adapt it for running all the Rattle step in one go. 
 
 ```
-snakemake -s rattle_snakefile -p toyset/rna/snakemake_output/transcriptome.fq --cores all
+snakemake -s rattle_snakefile -p toyset/rna/snakemake_output/transcriptome.fq --cores 1
 
 ```
 
