@@ -23,7 +23,7 @@ Reference-free reconstruction and quantification of transcriptomes from long-rea
    * [ssCheck](#sscheck)
    * [Example dataset](#example-dataset)
 # Requirements
-GCC with C++14 suppport
+GCC, G++ with C++14 suppport
 
 # Installation
 * Clone the repository
@@ -101,7 +101,7 @@ $ ./rattle cluster -h
     -t, --threads
         number of threads to use (default: 1)
     -k, --kmer-size
-        k-mer size for gene clustering (default: 10)
+        k-mer size for gene clustering (default: 10, maximum: 16)
     -s, --score-threshold
         minimum score for two reads to be in the same gene cluster (default: 0.2)
     -v, --max-variance
