@@ -335,3 +335,13 @@ Total introns in reads: 15323
 --> Novel: 5202 (33.95%)
 ```
 
+## Snakefile for toyset example
+User can easly adapt it for running all the Rattle step in one go. 
+
+```
+snakemake -s rattle_snakefile -p toyset/rna/snakemake_output/transcriptome.fq --cores 1
+
+```
+
+
+
