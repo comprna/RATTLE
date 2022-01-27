@@ -83,6 +83,7 @@ consensus_vector_t generate_consensus_vector(const read_set_t &reads, const msa_
     // generate consensus vector
     auto nt_info = std::vector<map_nt_info_t>(aln[0].size());
     for (int i = 0; i < nt_info.size(); i++) {
+    // for (int i = nt_info.size() - 1; i >= 0; i--) {
         nt_info[i] = map_nt_info_t();
         nt_info[i]['A'] = pos_info_t{'A', 0.0, 0, 0};
         nt_info[i]['C'] = pos_info_t{'C', 0.0, 0, 0};
@@ -107,6 +108,7 @@ consensus_vector_t generate_consensus_vector(const read_set_t &reads, const msa_
                 local_nt_info[i]['G'] = pos_info_t{'G', 0.0, 0, 0};
                 local_nt_info[i]['-'] = pos_info_t{'-', 0.0, 0, 0};
             }
+            // std::vector<map_nt_info_t> local_nt_info = nt_info;
 
             for (int i = t; i < reads.size(); i+=n_threads) {
                 auto read_aln = aln[i];
@@ -174,6 +176,7 @@ consensus_vector_t generate_consensus_vector(const read_set_t &reads, const msa_
     return consensus_vector_t{nt_info, consensus_nt};
 }
 
+// TODO: n_threads is useless here, default set to 1
 corrected_pack_t correct_read_pack(const read_set_t &reads, const msa_t &aln, double min_occ, double gap_occ, double err_ratio, int n_threads) {
     auto cv = generate_consensus_vector(reads, aln, n_threads);
     auto nt_info = cv.nt_info;
@@ -234,7 +237,7 @@ corrected_pack_t correct_read_pack(const read_set_t &reads, const msa_t &aln, do
                                     res_read += cnt;
                                     res_qt += phred_symbol(consensus_info.err);
                                     g2n++;
-                                } else {
+                                // } else {
                                     // res_read += nt;
                                 }
                             } else {
@@ -305,10 +308,14 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
         //     continue;
         // }
 
-        int n_files = (tc.seqs.size() + split - 1) / split; // ceil(tc.seqs.size / split)
+        // int n_files = (tc.seqs.size() + split - 1) / split; // ceil(tc.seqs.size / split)
+        // Avoid out of bound
+        int n_files = (tc.seqs.size() - 1) / split + 1;
 
+        // Split clusters
         for (int nf = 0; nf < n_files; nf++) {
-            int nreads_in_cluster = (tc.seqs.size() + n_files - 1 - nf) / n_files;
+            // int nreads_in_cluster = (tc.seqs.size() + n_files - 1 - nf) / n_files;
+            int nreads_in_cluster = (tc.seqs.size() - 1 - nf) / n_files + 1;
             auto creads = read_set_t(nreads_in_cluster);
 
             int i = 0;
@@ -345,6 +352,7 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
     int nf = 0;
     for (int t = 0; t < n_threads; ++t) {
         tasks.emplace_back(std::async(std::launch::async, [&nf, t, &consensi, &corrected_read_set, &uncorrected_read_set, &consensus_set, &pending_clusters, &mu, &corrected, &total_reads, gap_occ, min_occ, n_threads] {
+            // TODO: check this loop
             while (true) {
                 pack_to_correct_t pack;
                 int a;
@@ -353,6 +361,7 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
                     std::lock_guard<std::mutex> lock(mu);
                     if (pending_clusters.empty()) break;
 
+                    // TODO: check the front() function
                     pack = pending_clusters.front();
                     pending_clusters.pop();
                     a = nf++;
@@ -371,7 +380,7 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
                     graph->add_alignment(alignment, creads[j].seq);
                 }
                 
-                int i = 0;
+                // int i = 0;
                 std::vector<std::string> msa;
                 graph->generate_multiple_sequence_alignment(msa);
                 
@@ -403,7 +412,9 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
 
                 // f.close();
                 
+                // TODO: Check the last parameter should be 1 or n_threads
                 auto corrected_reads_pack = correct_read_pack(creads, msa, min_occ, gap_occ, 30.0, 1);
+                // auto corrected_reads_pack = correct_read_pack(creads, msa, min_occ, gap_occ, 30.0, n_threads);
                 auto corrected_reads = corrected_reads_pack.reads;
                 auto uncorrected_reads = corrected_reads_pack.uncorrected_reads;
 
@@ -515,7 +526,7 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
             graph->generate_multiple_sequence_alignment(msa);
             fix_msa_ends(it, msa);
 
-            int i = 0;
+            // int i = 0;
             // std::ofstream f;
             // f.open("cons.aln");
 
