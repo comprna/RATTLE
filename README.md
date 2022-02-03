@@ -109,7 +109,7 @@ $ ./rattle cluster -h
     --iso
         perform clustering at the isoform level
     --iso-kmer-size
-        k-mer size for isoform clustering (default: 11)
+        k-mer size for isoform clustering (default: 11, maximum: 16)
     --iso-score-threshold
         minimum score for two reads to be in the same isoform cluster (default: 0.3)
     --iso-max-variance
