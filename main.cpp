@@ -97,8 +97,13 @@ int main(int argc, char *argv[]) {
         int min_reads_cluster = args["min_reads_cluster"].as<int>(0);
         double repr_percentile = args["repr_percentile"].as<double>(0.15);
 
+        if(kmer_size > 16 || iso_kmer_size > 16){
+            std::cerr << "\nError: maximum kmer size = 16 \n";
+            return EXIT_FAILURE;
+        }
+
         bool is_rna = args["rna"];
-        std::cerr << "RNA mode: " << is_rna << std::endl;
+        std::cerr << "RNA mode: " << std::boolalpha << is_rna << std::endl;
 
         std::cerr << "Reading fasta file... ";
         if(access(args["input"], F_OK )){
@@ -164,6 +169,8 @@ int main(int argc, char *argv[]) {
             print_progress(i, gene_clusters.size());
         }
 
+        std::cerr << "Isoform clustering done" << std::endl;
+        std::cerr << iso_clusters.size() << " isoform clusters found" << std::endl;
         hps::to_stream(iso_clusters, out_file);
         out_file.close();
         return EXIT_SUCCESS;
