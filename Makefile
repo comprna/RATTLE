@@ -1,12 +1,12 @@
 EXEC=rattle
 CC=g++
-CFLAGS=-g -Wall -Wextra -std=c++14 -O3 -pthread
+CFLAGS=-Wall -Wextra -std=c++14 -O3 -pthread
 LIBS=-Ispoa/include
 
 all: $(EXEC)
 
 $(EXEC): main.cpp fasta.o cluster.o utils.o kmer.o similarity.o correct.o
-	$(CC) -pg -o $(EXEC) $(CFLAGS) $(LIBS) main.cpp fasta.o cluster.o utils.o kmer.o similarity.o correct.o spoa/build/lib/libspoa.a
+	$(CC) -o $(EXEC) $(CFLAGS) $(LIBS) main.cpp fasta.o cluster.o utils.o kmer.o similarity.o correct.o spoa/build/lib/libspoa.a
 
 utils.o: utils.hpp utils.cpp
 	$(CC) -c $(CFLAGS) utils.cpp
@@ -30,8 +30,5 @@ clean:
 	rm -f *.o
 	rm -f $(EXEC)
 	rm -f *log.txt
-	# rm -rf spoa/build
-	rm -f *.out
-	rm -f *.txt
 
 .PHONY: all clean
