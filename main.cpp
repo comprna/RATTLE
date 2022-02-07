@@ -239,7 +239,7 @@ int main(int argc, char *argv[]) {
             std::string extension = filename.substr(i + 1);
             if (!extension.compare("fq") || !extension.compare("fastq")){
                 reads = read_fastq_file(args["input"]);
-            } else if (!extension.compare("fasta") || extension.compare("fa")){
+            } else if (!extension.compare("fasta") || !extension.compare("fa")){
                 reads = read_fasta_file(args["input"]);
             } else {
                 std::cerr << "\nError: Input file format incorrect! Please use fasta/fastq file. \n";
