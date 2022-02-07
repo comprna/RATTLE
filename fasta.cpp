@@ -2,6 +2,33 @@
 #include <fstream>
 #include <algorithm>
 #include <iostream>
+#include <zlib.h>
+
+std::string unzip_file(std::string filename, int index){
+    gzFile infile = gzopen(filename.c_str(), "rb");
+    std::cerr << "Start decompressing file" << std::endl;
+    filename = filename.substr(0, index);
+    FILE *outfile = fopen(filename.c_str(), "wb");
+    gzrewind(infile);
+
+    if (infile == NULL) {
+        std::cerr << "Error: Failed to decompress the file" << std::endl;
+        return " ";
+    }
+
+    unsigned char unzipBuffer[1048576];
+    std::vector<unsigned char> unzippedData;
+    while(!gzeof(infile))
+    {
+        int len = gzread(infile, unzipBuffer, 1048576);
+        fwrite(unzipBuffer, 1, len, outfile);
+    }
+    fclose(outfile);
+    gzclose(infile);
+
+    std::cerr << "Decompressing file Complete" << std::endl;
+    return filename;
+}
 
 read_set_t read_fasta_file(std::string file) {
     read_set_t result;
