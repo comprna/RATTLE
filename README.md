@@ -94,8 +94,6 @@ $ ./rattle cluster -h
         shows this help message
     -i, --input
         input fasta/fastq file (required)
-    --fastq
-        whether input and output should be in fastq format (instead of fasta)
     -o, --output
         output folder (default: .)
     -t, --threads
@@ -139,8 +137,6 @@ $ ./rattle cluster_summary -h
         input fasta/fastq file (required)
     -c, --clusters
         clusters file (required)
-    --fastq
-        whether input and output should be in fastq format (instead of fasta)
 
 ```
 
@@ -193,8 +189,6 @@ $ ./rattle correct -h
         min reads to correct/output consensus for a cluster (default: 5)
     -t, --threads
         number of threads to use (default: 1)
-    --fastq
-        whether input should be in fastq format (instead of fasta)
 ```
 
 This step will generate 3 files:
@@ -232,13 +226,13 @@ We provide here as an example the analysis of a direct RNA sequencing dataset of
 
 **cluster**
 ```
-$ ./rattle cluster -i ./toyset/rna/input/sample.fastq -t 24 -o ./toyset/rna/output --fastq --rna
+$ ./rattle cluster -i ./toyset/rna/input/sample.fastq -t 24 -o ./toyset/rna/output --rna
 ```
 The output file generated from this step is clusters.out at ./toyset/rna/output/
 
 **cluster_summary**
 ```
-$ ./rattle cluster_summary -i ./toyset/rna/input/sample.fastq -c ./toyset/rna/output/clusters.out --fastq > ./toyset/rna/output/cluster_summary.tsv
+$ ./rattle cluster_summary -i ./toyset/rna/input/sample.fastq -c ./toyset/rna/output/clusters.out > ./toyset/rna/output/cluster_summary.tsv
 ```
 The output generated from this step is a tsv file on the standard output which can be redirected to a file, for example ./toyset/rna/output/cluster_summary.tsv
 
@@ -251,7 +245,7 @@ The output generated from this step is a clusters folder with 1 fastq file per c
 
 **correct**
 ```
-$  ./rattle correct -i ./toyset/rna/input/sample.fastq -c ./toyset/rna/output/clusters.out -o ./toyset/rna/output/ -t 24 --fastq
+$  ./rattle correct -i ./toyset/rna/input/sample.fastq -c ./toyset/rna/output/clusters.out -o ./toyset/rna/output/ -t 24
 ```
 The output generated from this step are three files uncorrected.fq, corrected.fq and consensi.fq at ./toyset/rna/output/
 
