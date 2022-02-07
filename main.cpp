@@ -27,8 +27,6 @@ int main(int argc, char *argv[]) {
             "shows this help message", 0},
             { "input", {"-i", "--input"},
             "input fasta/fastq file (required)", 1},
-            { "fastq", {"--fastq"},
-            "whether input and output should be in fastq format (instead of fasta)", 0},
             { "output", {"-o", "--output"},
             "output folder (default: .)", 1},
             { "threads", {"-t", "--threads"},
@@ -112,12 +110,19 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         } else {
             std::string filename = args["input"];
-            int i = filename.find_last_of(".");
-            std::string extension = filename.substr(i + 1);
+            int index = filename.find_last_of(".");
+            std::string extension = filename.substr(index + 1);
+
+            if (!extension.compare("gz")){
+                filename = unzip_file(filename, index);
+                index = filename.find_last_of(".");
+                extension = filename.substr(index + 1);
+            }
+
             if (!extension.compare("fq") || !extension.compare("fastq")){
-                reads = read_fastq_file(args["input"]);
+                reads = read_fastq_file(filename);
             } else if (!extension.compare("fasta") || !extension.compare("fa")){
-                reads = read_fasta_file(args["input"]);
+                reads = read_fasta_file(filename);
             } else {
                 std::cerr << "\nError: Input file format incorrect! Please use fasta/fastq file. \n";
                 return EXIT_FAILURE;
@@ -185,8 +190,6 @@ int main(int argc, char *argv[]) {
             "shows this help message", 0},
             { "input", {"-i", "--input"},
             "input fasta/fastq file (required)", 1},
-            { "fastq", {"--fastq"},
-            "whether input and output should be in fastq format (instead of fasta)", 0},
             { "clusters", {"-c", "--clusters"},
             "clusters file (required)", 1},
             { "output", {"-o", "--output"},
@@ -274,8 +277,6 @@ int main(int argc, char *argv[]) {
             "input fasta/fastq file (required)", 1},
             { "clusters", {"-c", "--clusters"},
             "clusters file (required)", 1},
-            { "fastq", {"--fastq"},
-            "whether input and output should be in fastq format (instead of fasta)", 0},
         }};
 
         argagg::parser_results args;
@@ -304,16 +305,23 @@ int main(int argc, char *argv[]) {
         }
 
         std::cerr << "Reading fasta file... ";
+        
+        read_set_t reads;
         if(access(args["input"], F_OK )){
             std::cerr << "\nError: Input file not found! \n";
             return EXIT_FAILURE;
-        }
-        
-        read_set_t reads;
-        if (args["fastq"]) {
-            reads = read_fastq_file(args["input"]);
         } else {
-            reads = read_fasta_file(args["input"]);
+            std::string filename = args["input"];
+            int i = filename.find_last_of(".");
+            std::string extension = filename.substr(i + 1);
+            if (!extension.compare("fq") || !extension.compare("fastq")){
+                reads = read_fastq_file(args["input"]);
+            } else if (!extension.compare("fasta") || !extension.compare("fa")){
+                reads = read_fasta_file(args["input"]);
+            } else {
+                std::cerr << "\nError: Input file format incorrect! Please use fasta/fastq file. \n";
+                return EXIT_FAILURE;
+            }
         }
 
         sort_read_set(reads);
