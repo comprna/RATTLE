@@ -106,18 +106,23 @@ int main(int argc, char *argv[]) {
         std::cerr << "RNA mode: " << std::boolalpha << is_rna << std::endl;
 
         std::cerr << "Reading fasta file... ";
+        read_set_t reads;
         if(access(args["input"], F_OK )){
             std::cerr << "\nError: Input file not found! \n";
             return EXIT_FAILURE;
-        }
-        
-        read_set_t reads;
-        if (args["fastq"]) {
-            reads = read_fastq_file(args["input"]);
         } else {
-            reads = read_fasta_file(args["input"]);
+            std::string filename = args["input"];
+            int i = filename.find_last_of(".");
+            std::string extension = filename.substr(i + 1);
+            if (!extension.compare("fq") || !extension.compare("fastq")){
+                reads = read_fastq_file(args["input"]);
+            } else if (!extension.compare("fasta") || !extension.compare("fa")){
+                reads = read_fasta_file(args["input"]);
+            } else {
+                std::cerr << "\nError: Input file format incorrect! Please use fasta/fastq file. \n";
+                return EXIT_FAILURE;
+            }
         }
-
 
         sort_read_set(reads);
         std::cerr << "Done" << std::endl;
@@ -224,16 +229,22 @@ int main(int argc, char *argv[]) {
         }
 
         std::cerr << "Reading fasta file... ";
+        read_set_t reads;
         if(access(args["input"], F_OK )){
             std::cerr << "\nError: Input file not found! \n";
             return EXIT_FAILURE;
-        }
-        
-        read_set_t reads;
-        if (args["fastq"]) {
-            reads = read_fastq_file(args["input"]);
         } else {
-            reads = read_fasta_file(args["input"]);
+            std::string filename = args["input"];
+            int i = filename.find_last_of(".");
+            std::string extension = filename.substr(i + 1);
+            if (!extension.compare("fq") || !extension.compare("fastq")){
+                reads = read_fastq_file(args["input"]);
+            } else if (!extension.compare("fasta") || extension.compare("fa")){
+                reads = read_fasta_file(args["input"]);
+            } else {
+                std::cerr << "\nError: Input file format incorrect! Please use fasta/fastq file. \n";
+                return EXIT_FAILURE;
+            }
         }
 
         sort_read_set(reads);
