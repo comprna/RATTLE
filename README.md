@@ -46,22 +46,22 @@ We provide here some of the most common commands used when running RATTLE.
 
 * Cluster cDNA Nanopore reads at gene level with 24 threads
 ```
-$ ./rattle cluster -i reads.fq -t 24 -o . --fastq
+$ ./rattle cluster -i reads.fq -t 24 -o . 
 ```
 
 * Cluster cDNA Nanopore reads at isoform level with 24 threads
 ```
-$ ./rattle cluster -i reads.fq -t 24 --fastq --iso
+$ ./rattle cluster -i reads.fq -t 24 --iso
 ```
 
 * Cluster RNA Nanopore reads at isoform level with 24 threads
 ```
-$ ./rattle cluster -i reads.fq -t 24 --fastq --iso --rna
+$ ./rattle cluster -i reads.fq -t 24 --iso --rna
 ```
 
 * View clustering summary (csv with read_id,cluster_id)
 ```
-$ ./rattle cluster_summary -i reads.fq -c clusters.out --fastq
+$ ./rattle cluster_summary -i reads.fq -c clusters.out
 ```
 
 * Extract 1 fastq file per cluster in clusters/ folder
@@ -72,7 +72,7 @@ $ ./rattle extract_clusters -i reads.fq -c transcripts.out -o clusters --fastq
 
 * Correct reads with 24 threads using isoform clusters
 ```
-$ ./rattle correct -i reads.fq -c clusters.out -t 24 --fastq
+$ ./rattle correct -i reads.fq -c clusters.out -t 24
 ```
 
 * Polish RNA consensus sequences and build final transcriptome using 24 threads
