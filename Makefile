@@ -6,8 +6,8 @@ LIBS=-Ispoa/include
 all: $(EXEC)
 
 $(EXEC): main.cpp fasta.o cluster.o utils.o kmer.o similarity.o correct.o
-	$(CC) -o $(EXEC) $(CFLAGS) $(LIBS) main.cpp fasta.o cluster.o utils.o kmer.o similarity.o correct.o spoa/build/lib/libspoa.a
-
+	$(CC) -o $(EXEC) $(CFLAGS) $(LIBS) main.cpp fasta.o -lz cluster.o utils.o kmer.o similarity.o correct.o spoa/build/lib/libspoa.a
+	
 utils.o: utils.hpp utils.cpp
 	$(CC) -c $(CFLAGS) utils.cpp
 
