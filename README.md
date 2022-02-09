@@ -93,7 +93,7 @@ $ ./rattle cluster -h
     -h, --help
         shows this help message
     -i, --input
-        input fasta/fastq file (required)
+        input fasta/fastq file or compressed with .gz extension, will automatically check file extension (required)
     -o, --output
         output folder (default: .)
     -t, --threads
