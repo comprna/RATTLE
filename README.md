@@ -124,6 +124,8 @@ $ ./rattle cluster -h
         cluster representative percentile (default: 0.15)
     --rna
         use this mode if data is direct RNA (disables checking both strands)
+    --verbose
+        use this flag if need to print the progress
 ```
 
 This clustering step will generate a file containing read clusters in binary format (clusters.out). To work with these clusters, the following commands are used.
@@ -189,6 +191,8 @@ $ ./rattle correct -h
         min reads to correct/output consensus for a cluster (default: 5)
     -t, --threads
         number of threads to use (default: 1)
+    --verbose
+        use this flag if need to print the progress
 ```
 
 This step will generate 3 files:
@@ -212,6 +216,8 @@ $ ./rattle polish -h
         number of threads to use (default: 1)
     --rna
         use this mode if data is direct RNA (disables checking both strands)
+    --verbose
+        use this flag if need to print the progress
 ```
 
 Input must be the consensus sequences from the previous step.
