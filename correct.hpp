@@ -41,7 +41,7 @@ struct consensus_vector_t {
 
 consensus_vector_t generate_consensus_vector(const read_set_t &reads, const msa_t &aln, int n_threads);
 corrected_pack_t correct_read_pack(const read_set_t &reads, const msa_t &aln, double min_occ, double gap_occ, double err_ratio, int n_threads);
-correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &reads, double min_occ, double gap_occ, double err_ratio, int split, int min_reads, int n_threads);
+correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &reads, double min_occ, double gap_occ, double err_ratio, int split, int min_reads, int n_threads, bool verbose);
 void fix_msa_ends(read_set_t &reads, msa_t &aln);
 
 #endif

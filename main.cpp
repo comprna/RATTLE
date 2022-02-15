@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
             { "threads", {"-t", "--threads"},
             "number of threads to use (default: 1)", 1},
             { "kmer_size", {"-k", "--kmer-size"},
-            "k-mer size for gene clustering (default: 10)", 1},
+            "k-mer size for gene clustering (default: 10, maximum: 16)", 1},
             { "t_s", {"-s", "--score-threshold"},
             "minimum score for two reads to be in the same gene cluster (default: 0.2)", 1},  
             { "t_v", {"-v", "--max-variance"},
@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
             { "iso", {"--iso"},
             "perform clustering at the isoform level", 0},
             { "iso_kmer_size", {"--iso-kmer-size"},
-            "k-mer size for isoform clustering (default: 11)", 1},
+            "k-mer size for isoform clustering (default: 11, maximum: 16)", 1},
             { "iso_t_s", {"--iso-score-threshold"},
             "minimum score for two reads to be in the same isoform cluster (default: 0.3)", 1},  
             { "iso_t_v", {"--iso-max-variance"},
@@ -57,6 +57,8 @@ int main(int argc, char *argv[]) {
             "cluster representative percentile (default: 0.15)", 1},  
             { "rna", {"--rna"},
             "use this mode if data is direct RNA (disables checking both strands)", 0},
+            { "verbose", {"--verbose"},
+            "use this flag if need to print the progress", 0},
         }};
 
         argagg::parser_results args;
@@ -95,6 +97,8 @@ int main(int argc, char *argv[]) {
         int min_reads_cluster = args["min_reads_cluster"].as<int>(0);
         double repr_percentile = args["repr_percentile"].as<double>(0.15);
 
+        bool verbose = args["verbose"];
+
         if(kmer_size > 16 || iso_kmer_size > 16){
             std::cerr << "\nError: maximum kmer size = 16 \n";
             return EXIT_FAILURE;
@@ -132,7 +136,7 @@ int main(int argc, char *argv[]) {
         sort_read_set(reads);
         std::cerr << "Done" << std::endl;
 
-        auto gene_clusters = cluster_reads(reads, kmer_size, t_s, t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, false, repr_percentile, is_rna, true, n_threads);
+        auto gene_clusters = cluster_reads(reads, kmer_size, t_s, t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, false, repr_percentile, is_rna, verbose, n_threads);
         std::ofstream out_file(args["output"].as<std::string>(".") + "/clusters.out", std::ofstream::binary);
         
         std::cerr << "Gene clustering done" << std::endl;
@@ -179,8 +183,8 @@ int main(int argc, char *argv[]) {
             print_progress(i, gene_clusters.size());
         }
 
-        std::cerr << "Isoform clustering done" << std::endl;
-        std::cerr << iso_clusters.size() << " isoform clusters found" << std::endl;
+        // std::cerr << "Isoform clustering done" << std::endl;
+        // std::cerr << iso_clusters.size() << " isoform clusters found" << std::endl;
         hps::to_stream(iso_clusters, out_file);
         out_file.close();
         return EXIT_SUCCESS;
@@ -204,6 +208,8 @@ int main(int argc, char *argv[]) {
             "min reads to correct/output consensus for a cluster (default: 5)", 1},
             { "threads", {"-t", "--threads"},
             "number of threads to use (default: 1)", 1},
+            { "verbose", {"--verbose"},
+            "use this flag if need to print the progress", 0},
         }};
 
         argagg::parser_results args;
@@ -260,8 +266,9 @@ int main(int argc, char *argv[]) {
         double min_occ = args["min-occ"].as<double>(0.3);
         double gap_occ = args["gap-occ"].as<double>(0.3);
         int min_reads = args["min-reads"].as<int>(5);
+        bool verbose = args["verbose"];
 
-        correction_results_t correction = correct_reads(clusters, reads, min_occ, gap_occ, 30.0, split, min_reads, n_threads);
+        correction_results_t correction = correct_reads(clusters, reads, min_occ, gap_occ, 30.0, split, min_reads, n_threads, verbose);
         write_fastq_file(correction.corrected, args["output"].as<std::string>(".") + "/corrected.fq");
         write_fastq_file(correction.uncorrected, args["output"].as<std::string>(".") + "/uncorrected.fq");
         write_fastq_file(correction.consensi, args["output"].as<std::string>(".") + "/consensi.fq");
@@ -452,6 +459,8 @@ int main(int argc, char *argv[]) {
             "number of threads to use (default: 1)", 1},
             { "rna", {"--rna"},
             "use this mode if data is direct RNA (disables checking both strands)", 0},
+            { "verbose", {"--verbose"},
+            "use this flag if need to print the progress", 0},
         }};
 
         argagg::parser_results args;
@@ -486,10 +495,11 @@ int main(int argc, char *argv[]) {
 
         int n_threads = args["threads"].as<int>(1);
         bool is_rna = args["rna"];
+        bool verbose = args["verbose"];
 
         std::cerr << "Clustering consensus sequences..." << std::endl;
-        auto clusters = cluster_reads(reads, 6, 0.5, 25, 0.4, 0.4, 0.05, 0, false, 0.15, is_rna, true, n_threads);
-        auto correction = correct_reads(clusters, reads, 0.3, 0.3, 30.0, 200, 0, n_threads);
+        auto clusters = cluster_reads(reads, 6, 0.5, 25, 0.4, 0.4, 0.05, 0, false, 0.15, is_rna, verbose, n_threads);
+        auto correction = correct_reads(clusters, reads, 0.3, 0.3, 30.0, 200, 0, n_threads, verbose);
 
         int cid = 0;
         for (auto &r: correction.consensi) {

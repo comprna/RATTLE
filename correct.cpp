@@ -291,7 +291,7 @@ corrected_pack_t correct_read_pack(const read_set_t &reads, const msa_t &aln, do
     return corrected_pack_t{-1, consensus, corrected_reads, uncorrected_reads};
 }
 
-correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &reads, double min_occ, double gap_occ, double err_ratio, int split, int min_reads, int n_threads) {
+correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &reads, double min_occ, double gap_occ, double err_ratio, int split, int min_reads, int n_threads, bool verbose) {
     std::queue<pack_to_correct_t> pending_clusters;
     int corrected = 0;
     int total_reads = 0;
@@ -302,12 +302,6 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
     read_set_t consensus_set;
 
     for (auto &tc: clusters) {           
-        // if (tc.seqs.size() != 1121) continue;
-        // if (cid != 21664) {
-        //     cid++;
-        //     continue;
-        // }
-
         // int n_files = (tc.seqs.size() + split - 1) / split; // ceil(tc.seqs.size / split)
         // Avoid out of bound
         int n_files = (tc.seqs.size() - 1) / split + 1;
@@ -351,7 +345,7 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
 
     int nf = 0;
     for (int t = 0; t < n_threads; ++t) {
-        tasks.emplace_back(std::async(std::launch::async, [&nf, t, &consensi, &corrected_read_set, &uncorrected_read_set, &consensus_set, &pending_clusters, &mu, &corrected, &total_reads, gap_occ, min_occ, n_threads] {
+        tasks.emplace_back(std::async(std::launch::async, [&nf, t, &consensi, &corrected_read_set, &uncorrected_read_set, &consensus_set, &pending_clusters, &mu, &corrected, &total_reads, gap_occ, min_occ, n_threads, &verbose] {
             // TODO: check this loop
             while (true) {
                 pack_to_correct_t pack;
@@ -361,12 +355,11 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
                     std::lock_guard<std::mutex> lock(mu);
                     if (pending_clusters.empty()) break;
 
-                    // TODO: check the front() function
                     pack = pending_clusters.front();
                     pending_clusters.pop();
                     a = nf++;
 
-                    print_progress(corrected, total_reads);
+                    if(verbose) print_progress(corrected, total_reads);
                 }
 
                 auto creads = pack.reads;
@@ -498,7 +491,7 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
         task.get();
     }
     
-    print_progress(corrected, total_reads);
+    if(verbose) print_progress(corrected, total_reads);
     std::cerr << std::endl;
 
     std::cerr << "Generating consensi..." << std::endl;
@@ -550,7 +543,7 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
         }
 
         cid++;
-        print_progress(cid, consensi.size());
+        if(verbose) print_progress(cid, consensi.size());
     }
 
     return correction_results_t{
