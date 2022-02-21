@@ -180,7 +180,7 @@ int main(int argc, char *argv[]) {
             }
 
             ++i;
-            print_progress(i, gene_clusters.size());
+            if (verbose) print_progress(i, gene_clusters.size());
         }
 
         // std::cerr << "Isoform clustering done" << std::endl;
