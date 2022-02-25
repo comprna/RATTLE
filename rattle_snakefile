@@ -4,7 +4,7 @@ rule rattle_cluster:
         output:
                 "toyset/rna/snakemake_output/clusters.out"
         shell:
-                 """./rattle cluster -i {input} -t 24 -o toyset/rna/snakemake_output --fastq --rna """
+                 """./rattle cluster -i {input} -t 24 -o toyset/rna/snakemake_output  --rna """
 
 rule rattle_correct:
         input:
@@ -16,7 +16,7 @@ rule rattle_correct:
                 "toyset/rna/snakemake_output/consensi.fq"
 
         shell:
-                 """./rattle correct -i {input.fastq} -c {input.clusters} -o toyset/rna/snakemake_output -t 24 --fastq """
+                 """./rattle correct -i {input.fastq} -c {input.clusters} -o toyset/rna/snakemake_output -t 24  """
 
 rule rattle_polish:
         input:
