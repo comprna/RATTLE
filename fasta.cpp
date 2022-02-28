@@ -44,8 +44,10 @@ read_set_t read_fasta_file(std::string file) {
         if (line[0] == '>') {
             if (!header.empty()) {
                 std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-                read_t r{header, seq, "", ""};
-                result.push_back(r);
+                if( seq.length() >= 150 && seq.length() <= 1000000){
+                    read_t r{header, seq, "", ""};
+                    result.push_back(r);
+                } 
             }
 
             seq = "";
@@ -89,8 +91,10 @@ read_set_t read_fastq_file(std::string file) {
             qt = line;
             lineID = 0;
 
-            read_t r{header, seq, ann, qt};
-            result.push_back(r);
+            if( seq.length() >= 150 && seq.length() <= 1000000){
+                read_t r{header, seq, ann, qt};
+                result.push_back(r);
+            }
         }
     }
 
