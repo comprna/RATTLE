@@ -19,10 +19,10 @@ Reference-free reconstruction and quantification of transcriptomes from long-rea
    * [Polishing step](#polishing-step)
  * [Example datasets](#example-datasets)
    * [Human direct RNA sequencing](#human-direct-RNA-sequencing)
- * [Appendix](#appendix)
+ * [Reference based benchmarking](#reference-based-benchmarking)
    * [ssCheck](#sscheck)
    * [Example dataset](#example-dataset)
-   * [Snakemake file](#Snakemake-file)
+ * [Snakemake](#Snakemake)
 # Requirements
 GCC, G++ with C++14 suppport
 
@@ -272,7 +272,7 @@ The output generated from this step is the transcriptome.fq at ./toyset/rna/outp
 | correct  		     | 1m16.180s	   | 0m15.939s     |
 | polish  		     | 0m2.615s	     | 0m2.693s      |
 
-# Appendix
+# Reference based benchmarking
 
 ## ssCheck
 
@@ -336,9 +336,9 @@ Total introns in reads: 15323
 --> Novel: 5202 (33.95%)
 ```
 
-## Snakemake file
+# Snakemake
 
-Below we show how the user can run all steps in one go. We show this using the toy dataset as example. 
+Below we show how the user can run all steps in one go using Snakemake. We show this using the toy dataset as example. 
 This can be adapted to any other dataset.
 ```
 snakemake -s rattle_snakefile -p toyset/rna/snakemake_output/transcriptome.fq --cores 1
