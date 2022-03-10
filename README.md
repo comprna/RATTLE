@@ -22,6 +22,7 @@ Reference-free reconstruction and quantification of transcriptomes from long-rea
  * [Appendix: reference-based benchmarking](#appendix-reference-based-benchmarking)
    * [ssCheck](#sscheck)
    * [Example dataset](#example-dataset)
+   * [Snakemake file for RATTLE](#Snakemake-file)
 # Requirements
 GCC, G++ with C++14 suppport
 
@@ -335,9 +336,10 @@ Total introns in reads: 15323
 --> Novel: 5202 (33.95%)
 ```
 
-## Snakefile for toyset example
-User can easly adapt it for running all the Rattle step in one go. 
+## Snakemake file
 
+Below we show how the user can run all steps in one go. We show this using the toy dataset as example. 
+This can be adapted to any other dataset.
 ```
 snakemake -s rattle_snakefile -p toyset/rna/snakemake_output/transcriptome.fq --cores 1
 
