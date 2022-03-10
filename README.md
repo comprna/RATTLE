@@ -19,10 +19,10 @@ Reference-free reconstruction and quantification of transcriptomes from long-rea
    * [Polishing step](#polishing-step)
  * [Example datasets](#example-datasets)
    * [Human direct RNA sequencing](#human-direct-RNA-sequencing)
- * [Appendix: reference-based benchmarking](#appendix-reference-based-benchmarking)
+ * [Appendix](#appendix)
    * [ssCheck](#sscheck)
    * [Example dataset](#example-dataset)
-   * [Snakemake file for RATTLE](#Snakemake-file)
+   * [Snakemake file](#Snakemake-file)
 # Requirements
 GCC, G++ with C++14 suppport
 
@@ -223,7 +223,7 @@ $ ./rattle polish -h
 
 Input must be the consensus sequences from the previous step.
 
-# Example datasets
+# Example dataset
 
 We provide below example datasets and rattle commands. We make available all input and output files in the folder **toyset/rna**. 
 
@@ -272,11 +272,11 @@ The output generated from this step is the transcriptome.fq at ./toyset/rna/outp
 | correct  		     | 1m16.180s	   | 0m15.939s     |
 | polish  		     | 0m2.615s	     | 0m2.693s      |
 
-# Appendix: reference-based benchmarking
+# Appendix
 
 ## ssCheck
 
-We describe here the tool **ssCheck** for the accuracy benchmarking of reads and transcripts mapped to a reference genome. ssCheck reads as input an alignment file in paf format and an annotation file in GTF format to compare with:
+We describe here the tool **ssCheck** for accuracy benchmarking of reads and transcripts mapped to a reference genome. ssCheck reads as input an alignment file in paf format and an annotation file in GTF format to compare with:
 
 ```
 python ss_check.py [-h] [--beautiful] ref.gtf aln.paf
