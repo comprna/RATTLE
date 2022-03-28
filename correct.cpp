@@ -80,6 +80,11 @@ remove_blocks:
 }
 
 consensus_vector_t generate_consensus_vector(const read_set_t &reads, const msa_t &aln, int n_threads) {
+    // Empty reads check
+    if(reads.size() == 0 || aln.size() == 0){
+        return {};
+    }
+
     // generate consensus vector
     auto nt_info = std::vector<map_nt_info_t>(aln[0].size());
     for (int i = 0; i < nt_info.size(); i++) {
@@ -128,6 +133,7 @@ consensus_vector_t generate_consensus_vector(const read_set_t &reads, const msa_
 
                         if (seq_pos == reads[i].quality.size() - 1) {
                             seq_pos++; // end of read
+                            // break;
                         }
                     }
                 }
@@ -153,7 +159,6 @@ consensus_vector_t generate_consensus_vector(const read_set_t &reads, const msa_
     for (int k = 0; k < aln[0].size(); ++k) {
         int max_occ = 0;
         char max_nt = 0;
-
         for (auto& kv : nt_info[k]) {
             if (kv.second.occ > 0) {
                 for (auto& kv2 : nt_info[k]) {
@@ -172,7 +177,6 @@ consensus_vector_t generate_consensus_vector(const read_set_t &reads, const msa_
         if (max_nt == 0) max_nt = '-';
         consensus_nt[k] = max_nt;
     }
-
     return consensus_vector_t{nt_info, consensus_nt};
 }
 
@@ -261,6 +265,7 @@ corrected_pack_t correct_read_pack(const read_set_t &reads, const msa_t &aln, do
 
                         if (seq_pos == reads[i].quality.size() - 1) {
                             seq_pos++; //end of seq
+                            // break;
                         }
                     }
                 }
@@ -315,7 +320,6 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
             int i = 0;
             for (int j = nf; j < tc.seqs.size(); j += n_files) {
                 auto ts = tc.seqs[j];
-
                 if (ts.rev) {
                     reads[ts.seq_id].seq = reverse_complement(reads[ts.seq_id].seq);                
                     std::reverse(reads[ts.seq_id].quality.begin(), reads[ts.seq_id].quality.end()); 
@@ -335,7 +339,6 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
                 }
             }
         }
-
         cid++;
     }
 
@@ -367,7 +370,6 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
                 5, -4, -8, -6);
 
                 auto graph = spoa::createGraph();
-
                 for (int j = 0; j < creads.size(); ++j) {
                     auto alignment = alignment_engine->align(creads[j].seq, graph);
                     graph->add_alignment(alignment, creads[j].seq);
@@ -378,7 +380,6 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
                 graph->generate_multiple_sequence_alignment(msa);
                 
                 fix_msa_ends(creads, msa);
-
                 ////// SAVE MSA
                 // i = 0;
 
@@ -406,11 +407,11 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
                 // f.close();
                 
                 // TODO: Check the last parameter should be 1 or n_threads
+                // TODO: check the following correct_read_pack function
                 auto corrected_reads_pack = correct_read_pack(creads, msa, min_occ, gap_occ, 30.0, 1);
                 // auto corrected_reads_pack = correct_read_pack(creads, msa, min_occ, gap_occ, 30.0, n_threads);
                 auto corrected_reads = corrected_reads_pack.reads;
                 auto uncorrected_reads = corrected_reads_pack.uncorrected_reads;
-
                 {
                     std::lock_guard<std::mutex> lock(mu);
                     for (int i = 0; i < corrected_reads.size(); ++i) {
@@ -424,7 +425,6 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
 
                     corrected+=creads.size();
                 }
-
                 // create new MSA with corrected reads
                 sort_read_set(corrected_reads);
                 graph = spoa::createGraph();
@@ -542,7 +542,7 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
             }
         }
 
-        cid++;
+        ++cid;
         if(verbose) print_progress(cid, consensi.size());
     }
 
