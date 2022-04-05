@@ -127,6 +127,8 @@ $ ./rattle cluster -h
         use this mode if data is direct RNA (disables checking both strands)
     --verbose
         use this flag if need to print the progress
+    --filter
+        using this flag if do not want to filter out short (<150nt) and long (>100,000nt) reads
 ```
 
 This clustering step will generate a file containing read clusters in binary format (clusters.out). To work with these clusters, the following commands are used.
@@ -140,6 +142,8 @@ $ ./rattle cluster_summary -h
         input fasta/fastq file (required)
     -c, --clusters
         clusters file (required)
+    --filter
+        using this flag if do not want to filter out short (<150nt) and long (>100,000nt) reads
 
 ```
 
@@ -163,6 +167,8 @@ $ ./rattle extract_clusters -h
         min reads per cluster to save it into a file
     --fastq
         whether input and output should be in fastq format (instead of fasta)
+    --filter
+        using this flag if do not want to filter out short (<150nt) and long (>100,000nt) reads
 
 ```
 
@@ -194,6 +200,8 @@ $ ./rattle correct -h
         number of threads to use (default: 1)
     --verbose
         use this flag if need to print the progress
+    --filter
+        using this flag if do not want to filter out short (<150nt) and long (>100,000nt) reads
 ```
 
 This step will generate 3 files:
