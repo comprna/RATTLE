@@ -14,8 +14,8 @@ struct read_t {
 typedef std::vector<read_t> read_set_t;
 
 std::string unzip_file(std::string filename, int index);
-read_set_t read_fasta_file(std::string file);
-read_set_t read_fastq_file(std::string file);
+read_set_t read_fasta_file(std::string file, bool filter);
+read_set_t read_fastq_file(std::string file, bool filter);
 void write_fastq_file(const read_set_t &reads, std::string file);
 void sort_read_set(read_set_t &rs);
 

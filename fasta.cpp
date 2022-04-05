@@ -30,7 +30,7 @@ std::string unzip_file(std::string filename, int index){
     return filename;
 }
 
-read_set_t read_fasta_file(std::string file) {
+read_set_t read_fasta_file(std::string file, bool filter) {
     read_set_t result;
 
     std::ifstream infile(file);
@@ -54,7 +54,10 @@ read_set_t read_fasta_file(std::string file) {
             if (line[0] == '>') {
                 if (!header.empty()) {
                     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-                    if( seq.length() >= 150 && seq.length() <= 1000000){
+                    if(filter){
+                        read_t r{header, seq, "", ""};
+                        result.push_back(r);
+                    } else if( seq.length() >= 150 && seq.length() <= 100000){
                         read_t r{header, seq, "", ""};
                         result.push_back(r);
                     } 
@@ -73,7 +76,10 @@ read_set_t read_fasta_file(std::string file) {
             if (line[0] == '>') {
                 if (!header.empty()) {
                     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-                    if( seq.length() >= 150 && seq.length() <= 1000000){
+                    if(filter){
+                        read_t r{header, seq, "", ""};
+                        result.push_back(r);
+                    } else if( seq.length() >= 150 && seq.length() <= 100000){
                         read_t r{header, seq, "", ""};
                         result.push_back(r);
                     } 
@@ -88,7 +94,10 @@ read_set_t read_fasta_file(std::string file) {
     }
 
     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-    if (!header.empty() && seq.length() >= 150 && seq.length() <= 1000000) {
+    if(filter){
+        read_t r{header, seq, "", ""};
+        result.push_back(r);
+    } else if (!header.empty() && seq.length() >= 150 && seq.length() <= 100000) {
         read_t r{header, seq, "", ""};
         result.push_back(r);
     }
@@ -96,7 +105,7 @@ read_set_t read_fasta_file(std::string file) {
     return result;
 }
 
-read_set_t read_fastq_file(std::string file) {
+read_set_t read_fastq_file(std::string file, bool filter) {
     read_set_t result;
 
     std::ifstream infile(file);
@@ -133,7 +142,10 @@ read_set_t read_fastq_file(std::string file) {
                 qt = line;
                 lineID = 0;
 
-                if( seq.length() >= 150 && seq.length() <= 1000000){
+                if(filter){
+                    read_t r{header, seq, ann, qt};
+                    result.push_back(r);
+                } else if( seq.length() >= 150 && seq.length() <= 100000){
                     read_t r{header, seq, ann, qt};
                     result.push_back(r);
                 }
@@ -154,7 +166,10 @@ read_set_t read_fastq_file(std::string file) {
                 qt = line.substr(0, line.size() - 1);
                 lineID = 0;
 
-                if( seq.length() >= 150 && seq.length() <= 1000000){
+                if(filter){
+                    read_t r{header, seq, ann, qt};
+                    result.push_back(r);
+                } else if( seq.length() >= 150 && seq.length() <= 100000){
                     read_t r{header, seq, ann, qt};
                     result.push_back(r);
                 }
