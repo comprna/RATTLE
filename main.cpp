@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
         }
 
         // std::cerr << "Isoform clustering done" << std::endl;
-        std::cerr << iso_clusters.size() << " isoform clusters found" << std::endl;
+        // std::cerr << iso_clusters.size() << " isoform clusters found" << std::endl;
         hps::to_stream(iso_clusters, out_file);
         out_file.close();
         return EXIT_SUCCESS;
