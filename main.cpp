@@ -59,8 +59,12 @@ int main(int argc, char *argv[]) {
             "use this mode if data is direct RNA (disables checking both strands)", 0},
             { "verbose", {"--verbose"},
             "use this flag if need to print the progress", 0},
-            {"filter", {"--filter"},
-            "using this flag if do not want to filter out short (<150nt) and long (>100,000nt) reads", 0},
+            { "raw", {"--raw"},
+            "use this flag if want to use raw datasets", 0},
+            {"lower_len", {"--lower-length"},
+            "set the lower length for input reads filter (default: 150)", 1},
+            {"upper_len", {"--upper-length"},
+            "set the upper length for input reads filter (default: 100,000)", 1},
         }};
 
         argagg::parser_results args;
@@ -99,8 +103,11 @@ int main(int argc, char *argv[]) {
         int min_reads_cluster = args["min_reads_cluster"].as<int>(0);
         double repr_percentile = args["repr_percentile"].as<double>(0.15);
 
+        int lower_len = args["lower_len"].as<int>(150);
+        int upper_len = args["upper_len"].as<int>(100000);
+
         bool verbose = args["verbose"];
-        bool filter = args["filter"];
+        bool raw = args["raw"];
 
         if(kmer_size > 16 || iso_kmer_size > 16){
             std::cerr << "\nError: maximum kmer size = 16 \n";
@@ -127,9 +134,9 @@ int main(int argc, char *argv[]) {
             }
 
             if (!extension.compare("fq") || !extension.compare("fastq")){
-                reads = read_fastq_file(filename, filter);
+                reads = read_fastq_file(filename, raw, lower_len, upper_len);
             } else if (!extension.compare("fasta") || !extension.compare("fa")){
-                reads = read_fasta_file(filename, filter);
+                reads = read_fasta_file(filename, raw, lower_len, upper_len);
             } else {
                 std::cerr << "\nError: Input file format incorrect! Please use fasta/fastq file. \n";
                 return EXIT_FAILURE;
@@ -213,8 +220,12 @@ int main(int argc, char *argv[]) {
             "number of threads to use (default: 1)", 1},
             { "verbose", {"--verbose"},
             "use this flag if need to print the progress", 0},
-            {"filter", {"--filter"},
-            "using this flag if do not want to filter out short (<150nt) and long (>100,000nt) reads", 0},
+            {"raw", {"--raw"},
+            "use this flag if want to use raw datasets", 0},
+            {"lower_len", {"--lower-length"},
+            "set the lower length for input reads filter (default: 150)", 1},
+            {"upper_len", {"--upper-length"},
+            "set the upper length for input reads filter (default: 100,000)", 1},
         }};
 
         argagg::parser_results args;
@@ -242,7 +253,9 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
 
-        bool filter = args["filter"];
+        bool raw = args["raw"];
+        int lower_len = args["lower_len"].as<int>(150);
+        int upper_len = args["upper_len"].as<int>(100000);
 
         std::cerr << "Reading fasta file... ";
         read_set_t reads;
@@ -254,9 +267,9 @@ int main(int argc, char *argv[]) {
             int i = filename.find_last_of(".");
             std::string extension = filename.substr(i + 1);
             if (!extension.compare("fq") || !extension.compare("fastq")){
-                reads = read_fastq_file(args["input"], filter);
+                reads = read_fastq_file(args["input"], raw, lower_len, upper_len);
             } else if (!extension.compare("fasta") || !extension.compare("fa")){
-                reads = read_fasta_file(args["input"], filter);
+                reads = read_fasta_file(args["input"], raw, lower_len, upper_len);
             } else {
                 std::cerr << "\nError: Input file format incorrect! Please use fasta/fastq file. \n";
                 return EXIT_FAILURE;
@@ -291,8 +304,12 @@ int main(int argc, char *argv[]) {
             "input fasta/fastq file (required)", 1},
             { "clusters", {"-c", "--clusters"},
             "clusters file (required)", 1},
-             {"filter", {"--filter"},
-            "using this flag if do not want to filter out short (<150nt) and long (>100,000nt) reads", 0},           
+            { "raw", {"--raw"},
+            "use this flag if want to use raw datasets", 0},  
+            { "lower_len", {"--lower-length"},
+            "set the lower length for input reads filter (default: 150)", 1},
+            { "upper_len", {"--upper-length"},
+            "set the upper length for input reads filter (default: 100,000)", 1},         
         }};
 
         argagg::parser_results args;
@@ -322,7 +339,9 @@ int main(int argc, char *argv[]) {
 
         std::cerr << "Reading fasta file... ";
         
-        bool filter = args["filter"];
+        bool raw = args["raw"];
+        int lower_len = args["lower_len"].as<int>(150);
+        int upper_len = args["upper_len"].as<int>(100000);
         read_set_t reads;
         if(access(args["input"], F_OK )){
             std::cerr << "\nError: Input file not found! \n";
@@ -332,9 +351,9 @@ int main(int argc, char *argv[]) {
             int i = filename.find_last_of(".");
             std::string extension = filename.substr(i + 1);
             if (!extension.compare("fq") || !extension.compare("fastq")){
-                reads = read_fastq_file(args["input"], filter);
+                reads = read_fastq_file(args["input"], raw, lower_len, upper_len);
             } else if (!extension.compare("fasta") || !extension.compare("fa")){
-                reads = read_fasta_file(args["input"], filter);
+                reads = read_fasta_file(args["input"], raw, lower_len, upper_len);
             } else {
                 std::cerr << "\nError: Input file format incorrect! Please use fasta/fastq file. \n";
                 return EXIT_FAILURE;
@@ -369,8 +388,12 @@ int main(int argc, char *argv[]) {
             "min reads per cluster to save it into a file", 1},
             { "fastq", {"--fastq"},
             "whether input and output should be in fastq format (instead of fasta)", 0},
-            {"filter", {"--filter"},
-            "using this flag if do not want to filter out short (<150nt) and long (>100,000nt) reads", 0},         
+            {"raw", {"--raw"},
+            "use this flag if want to use raw datasets", 0},         
+            { "lower_len", {"--lower-length"},
+            "set the lower length for input reads filter (default: 150)", 1},
+            { "upper_len", {"--upper-length"},
+            "set the upper length for input reads filter (default: 100,000)", 1},
         }};
 
         argagg::parser_results args;
@@ -404,12 +427,14 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
         
-        bool filter = args["filter"];
+        bool raw = args["raw"];
+        int lower_len = args["lower_len"].as<int>(150);
+        int upper_len = args["upper_len"].as<int>(100000);
         read_set_t reads;
         if (args["fastq"]) {
-            reads = read_fastq_file(args["input"], filter);
+            reads = read_fastq_file(args["input"], raw, lower_len, upper_len);
         } else {
-            reads = read_fasta_file(args["input"], filter);
+            reads = read_fasta_file(args["input"], raw, lower_len, upper_len);
         }
 
         sort_read_set(reads);
@@ -501,7 +526,7 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
         
-        read_set_t reads = read_fastq_file(args["input"], true);
+        read_set_t reads = read_fastq_file(args["input"], true, 150, 100000);
 
         sort_read_set(reads);
         std::cerr << "Done" << std::endl;

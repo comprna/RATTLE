@@ -30,7 +30,7 @@ std::string unzip_file(std::string filename, int index){
     return filename;
 }
 
-read_set_t read_fasta_file(std::string file, bool filter) {
+read_set_t read_fasta_file(std::string file, bool raw, int lower_len, int upper_len) {
     read_set_t result;
 
     std::ifstream infile(file);
@@ -56,14 +56,14 @@ read_set_t read_fasta_file(std::string file, bool filter) {
             if (line[0] == '>') {
                 if (!header.empty()) {
                     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-                    if(filter){
+                    if(raw){
                         for(int i = 0; i < seq.size(); i++){
                             qt += '~';
                         }
                         read_t r{header, seq, "", qt};
                         result.push_back(r);
                         qt = "";
-                    } else if( seq.length() >= 150 && seq.length() <= 100000){
+                    } else if( seq.length() >= lower_len && seq.length() <= upper_len){
                         for(int i = 0; i < seq.size(); i++){
                             qt += '~';
                         }
@@ -86,14 +86,14 @@ read_set_t read_fasta_file(std::string file, bool filter) {
             if (line[0] == '>') {
                 if (!header.empty()) {
                     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-                    if(filter){
+                    if(raw){
                         for(int i = 0; i < seq.size(); i++){
                             qt += '~';
                         }
                         read_t r{header, seq, "", qt};
                         result.push_back(r);
                         qt = "";
-                    } else if( seq.length() >= 150 && seq.length() <= 100000){
+                    } else if( seq.length() >= lower_len && seq.length() <= upper_len){
                         for(int i = 0; i < seq.size(); i++){
                             qt += '~';
                         }
@@ -112,14 +112,14 @@ read_set_t read_fasta_file(std::string file, bool filter) {
     }
 
     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-    if(filter){
+    if(raw){
         for(int i = 0; i < seq.size(); i++){
             qt += '~';
         }
         read_t r{header, seq, "", qt};
         result.push_back(r);
         qt = "";
-    } else if( seq.length() >= 150 && seq.length() <= 100000){
+    } else if( seq.length() >= lower_len && seq.length() <= upper_len){
         for(int i = 0; i < seq.size(); i++){
             qt += '~';
         }
@@ -131,7 +131,7 @@ read_set_t read_fasta_file(std::string file, bool filter) {
     return result;
 }
 
-read_set_t read_fastq_file(std::string file, bool filter) {
+read_set_t read_fastq_file(std::string file, bool raw, int lower_len, int upper_len) {
     read_set_t result;
 
     std::ifstream infile(file);
@@ -168,10 +168,10 @@ read_set_t read_fastq_file(std::string file, bool filter) {
                 qt = line;
                 lineID = 0;
 
-                if(filter){
+                if(raw){
                     read_t r{header, seq, ann, qt};
                     result.push_back(r);
-                } else if( seq.length() >= 150 && seq.length() <= 100000){
+                } else if( seq.length() >= lower_len && seq.length() <= upper_len){
                     read_t r{header, seq, ann, qt};
                     result.push_back(r);
                 }
@@ -192,10 +192,10 @@ read_set_t read_fastq_file(std::string file, bool filter) {
                 qt = line.substr(0, line.size() - 1);
                 lineID = 0;
 
-                if(filter){
+                if(raw){
                     read_t r{header, seq, ann, qt};
                     result.push_back(r);
-                } else if( seq.length() >= 150 && seq.length() <= 100000){
+                } else if( seq.length() >= lower_len && seq.length() <= upper_len){
                     read_t r{header, seq, ann, qt};
                     result.push_back(r);
                 }
