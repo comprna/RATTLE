@@ -37,8 +37,10 @@ read_set_t read_fasta_file(std::string file, bool filter) {
     std::string line;
     std::string header;
     std::string seq;
+    std::string qt = "";
     bool isLinux = true;
 
+    // Setting the FASTA format quality value to the maximum value '~' for correction and polish step
     std::getline(infile, line);
     if(char (line[line.size() - 1]) == '\r'){
         isLinux = false;
@@ -55,11 +57,19 @@ read_set_t read_fasta_file(std::string file, bool filter) {
                 if (!header.empty()) {
                     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
                     if(filter){
-                        read_t r{header, seq, "", ""};
+                        for(int i = 0; i < seq.size(); i++){
+                            qt += '~';
+                        }
+                        read_t r{header, seq, "", qt};
                         result.push_back(r);
+                        qt = "";
                     } else if( seq.length() >= 150 && seq.length() <= 100000){
-                        read_t r{header, seq, "", ""};
+                        for(int i = 0; i < seq.size(); i++){
+                            qt += '~';
+                        }
+                        read_t r{header, seq, "", qt};
                         result.push_back(r);
+                        qt = "";
                     } 
                 }
 
@@ -77,11 +87,19 @@ read_set_t read_fasta_file(std::string file, bool filter) {
                 if (!header.empty()) {
                     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
                     if(filter){
-                        read_t r{header, seq, "", ""};
+                        for(int i = 0; i < seq.size(); i++){
+                            qt += '~';
+                        }
+                        read_t r{header, seq, "", qt};
                         result.push_back(r);
+                        qt = "";
                     } else if( seq.length() >= 150 && seq.length() <= 100000){
-                        read_t r{header, seq, "", ""};
+                        for(int i = 0; i < seq.size(); i++){
+                            qt += '~';
+                        }
+                        read_t r{header, seq, "", qt};
                         result.push_back(r);
+                        qt = "";
                     } 
                 }
 
@@ -95,13 +113,21 @@ read_set_t read_fasta_file(std::string file, bool filter) {
 
     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
     if(filter){
-        read_t r{header, seq, "", ""};
+        for(int i = 0; i < seq.size(); i++){
+            qt += '~';
+        }
+        read_t r{header, seq, "", qt};
         result.push_back(r);
-    } else if (!header.empty() && seq.length() >= 150 && seq.length() <= 100000) {
-        read_t r{header, seq, "", ""};
+        qt = "";
+    } else if( seq.length() >= 150 && seq.length() <= 100000){
+        for(int i = 0; i < seq.size(); i++){
+            qt += '~';
+        }
+        read_t r{header, seq, "", qt};
         result.push_back(r);
-    }
-
+        qt = "";
+    } 
+    
     return result;
 }
 
