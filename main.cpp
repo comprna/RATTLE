@@ -14,6 +14,50 @@
 #include <queue>
 #include <unistd.h>
 
+read_set_t read_multiple_inputs(argagg::option_results args_input) {
+        
+        read_set_t reads;
+
+        auto input_files = args_input.all;
+
+        int sample_number = 0;
+
+        for (std::string i : input_files) {
+            if(access(i.c_str(), F_OK )){
+                throw "\nError: Input file not found! \n";
+            } else {
+
+                std::string sample_id = "S" + std::to_string(sample_number);
+                std::string filename = i;
+                int index = filename.find_last_of(".");
+                std::string extension = filename.substr(index + 1);
+
+                if (!extension.compare("gz")){
+                    filename = unzip_file(filename, index);
+                    index = filename.find_last_of(".");
+                    extension = filename.substr(index + 1);
+                }
+
+                if (!extension.compare("fq") || !extension.compare("fastq")){
+                    auto file_reads = read_fastq_file(filename, sample_id);
+
+                    reads.insert(std::end(reads), std::begin(file_reads), std::end(file_reads));
+
+                } else if (!extension.compare("fasta") || !extension.compare("fa")){
+                    auto file_reads = read_fasta_file(filename, sample_id);
+                    reads.insert(std::end(reads), std::begin(file_reads), std::end(file_reads));
+                } else {
+                    throw "\nError: Input file format incorrect! Please use fasta/fastq file. \n";
+                }
+
+                ++sample_number;
+            }
+        }
+
+        return reads;
+}
+
+
 int main(int argc, char *argv[]) {
     if (argc < 2) {
         std::cout << "Run with mode: ./rattle <cluster|cluster_summary|extract_clusters|correct|polish>" << std::endl;
@@ -107,38 +151,37 @@ int main(int argc, char *argv[]) {
         bool is_rna = args["rna"];
         std::cerr << "RNA mode: " << std::boolalpha << is_rna << std::endl;
 
-        std::cerr << "Reading fasta file... ";
+        std::cerr << "Reading fasta file... " << std::endl;
+
         read_set_t reads;
-        if(access(args["input"], F_OK )){
-            std::cerr << "\nError: Input file not found! \n";
+
+        try {
+           reads = read_multiple_inputs(args["input"]);
+        }
+        catch (char* c) {
+            std::cerr << c;
             return EXIT_FAILURE;
-        } else {
-            std::string filename = args["input"];
-            int index = filename.find_last_of(".");
-            std::string extension = filename.substr(index + 1);
-
-            if (!extension.compare("gz")){
-                filename = unzip_file(filename, index);
-                index = filename.find_last_of(".");
-                extension = filename.substr(index + 1);
-            }
-
-            if (!extension.compare("fq") || !extension.compare("fastq")){
-                reads = read_fastq_file(filename);
-            } else if (!extension.compare("fasta") || !extension.compare("fa")){
-                reads = read_fasta_file(filename);
-            } else {
-                std::cerr << "\nError: Input file format incorrect! Please use fasta/fastq file. \n";
-                return EXIT_FAILURE;
-            }
         }
 
+        std::cout << "Reads: " << reads.size() << std::endl;
+
         sort_read_set(reads);
+
+        // for (auto i : reads) {
+        //     std::cerr << i.header << std::endl;
+        // }
+
         std::cerr << "Done" << std::endl;
 
         auto gene_clusters = cluster_reads(reads, kmer_size, t_s, t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, false, repr_percentile, is_rna, verbose, n_threads);
         std::ofstream out_file(args["output"].as<std::string>(".") + "/clusters.out", std::ofstream::binary);
         
+        // for (auto i : gene_clusters) {
+        //     for (auto j : i.seqs) {
+        //         std::cerr << j.seq_id << std::endl;
+        //     }
+        // }
+
         std::cerr << "Gene clustering done" << std::endl;
         std::cerr << gene_clusters.size() << " gene clusters found" << std::endl;
         if (!args["iso"]) {
@@ -183,8 +226,8 @@ int main(int argc, char *argv[]) {
             if (verbose) print_progress(i, gene_clusters.size());
         }
 
-        // std::cerr << "Isoform clustering done" << std::endl;
-        // std::cerr << iso_clusters.size() << " isoform clusters found" << std::endl;
+        std::cerr << "Isoform clustering done" << std::endl;
+        std::cerr << iso_clusters.size() << " isoform clusters found" << std::endl;
         hps::to_stream(iso_clusters, out_file);
         out_file.close();
         return EXIT_SUCCESS;
@@ -238,24 +281,17 @@ int main(int argc, char *argv[]) {
         }
 
         std::cerr << "Reading fasta file... ";
-        read_set_t reads;
-        if(access(args["input"], F_OK )){
-            std::cerr << "\nError: Input file not found! \n";
-            return EXIT_FAILURE;
-        } else {
-            std::string filename = args["input"];
-            int i = filename.find_last_of(".");
-            std::string extension = filename.substr(i + 1);
-            if (!extension.compare("fq") || !extension.compare("fastq")){
-                reads = read_fastq_file(args["input"]);
-            } else if (!extension.compare("fasta") || !extension.compare("fa")){
-                reads = read_fasta_file(args["input"]);
-            } else {
-                std::cerr << "\nError: Input file format incorrect! Please use fasta/fastq file. \n";
-                return EXIT_FAILURE;
-            }
-        }
 
+        read_set_t reads;
+
+        try {
+           reads = read_multiple_inputs(args["input"]);
+        }
+        catch (char* c) {
+            std::cerr << c;
+            return EXIT_FAILURE;
+        }
+           
         sort_read_set(reads);
         std::cerr << "Done" << std::endl;
 
@@ -314,21 +350,13 @@ int main(int argc, char *argv[]) {
         std::cerr << "Reading fasta file... ";
         
         read_set_t reads;
-        if(access(args["input"], F_OK )){
-            std::cerr << "\nError: Input file not found! \n";
+
+        try {
+           reads = read_multiple_inputs(args["input"]);
+        }
+        catch (char* c) {
+            std::cerr << c;
             return EXIT_FAILURE;
-        } else {
-            std::string filename = args["input"];
-            int i = filename.find_last_of(".");
-            std::string extension = filename.substr(i + 1);
-            if (!extension.compare("fq") || !extension.compare("fastq")){
-                reads = read_fastq_file(args["input"]);
-            } else if (!extension.compare("fasta") || !extension.compare("fa")){
-                reads = read_fasta_file(args["input"]);
-            } else {
-                std::cerr << "\nError: Input file format incorrect! Please use fasta/fastq file. \n";
-                return EXIT_FAILURE;
-            }
         }
 
         sort_read_set(reads);
@@ -393,10 +421,13 @@ int main(int argc, char *argv[]) {
         }
         
         read_set_t reads;
-        if (args["fastq"]) {
-            reads = read_fastq_file(args["input"]);
-        } else {
-            reads = read_fasta_file(args["input"]);
+
+        try {
+           reads = read_multiple_inputs(args["input"]);
+        }
+        catch (char* c) {
+            std::cerr << c;
+            return EXIT_FAILURE;
         }
 
         sort_read_set(reads);
