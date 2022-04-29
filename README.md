@@ -1,7 +1,7 @@
 # RATTLE
 Reference-free reconstruction and quantification of transcriptomes from long-read sequencing
 
-* I. de la Rubia, J. A. Indi, S. Carbonell-Sala,  J. Lagarde,  M.M. Albà, E. Eyras. Reference-free reconstruction and quantification of transcriptomes from Nanopore long-read sequencing. bioRxiv doi: https://doi.org/10.1101/2020.02.08.939942
+* I. de la Rubia, A. Srivastava, W. Xue, J. A. Indi, S. Carbonell-Sala,  J. Lagarde,  M.M. Albà, E. Eyras. RATTLE: Reference-free reconstruction and quantification of transcriptomes from Nanopore long-read sequencing. bioRxiv doi: https://doi.org/10.1101/2020.02.08.939942
 
 
 ----------------------------
@@ -19,9 +19,10 @@ Reference-free reconstruction and quantification of transcriptomes from long-rea
    * [Polishing step](#polishing-step)
  * [Example datasets](#example-datasets)
    * [Human direct RNA sequencing](#human-direct-RNA-sequencing)
- * [Appendix: reference-based benchmarking](#appendix-reference-based-benchmarking)
+ * [Reference based benchmarking](#reference-based-benchmarking)
    * [ssCheck](#sscheck)
    * [Example dataset](#example-dataset)
+ * [Snakemake](#Snakemake)
 # Requirements
 GCC, G++ with C++14 suppport
 
@@ -126,6 +127,12 @@ $ ./rattle cluster -h
         use this mode if data is direct RNA (disables checking both strands)
     --verbose
         use this flag if need to print the progress
+    --raw
+        use this flag if want to use raw datasets
+    --lower-length
+        set the lower length for input reads filter (default: 150)
+    --upper-length
+        set the upper length for input reads filter (default: 100,000)
 ```
 
 This clustering step will generate a file containing read clusters in binary format (clusters.out). To work with these clusters, the following commands are used.
@@ -139,6 +146,12 @@ $ ./rattle cluster_summary -h
         input fasta/fastq file (required)
     -c, --clusters
         clusters file (required)
+    --raw
+        use this flag if want to use raw datasets
+    --lower-length
+        set the lower length for input reads filter (default: 150)
+    --upper-length
+        set the upper length for input reads filter (default: 100,000)
 
 ```
 
@@ -162,6 +175,12 @@ $ ./rattle extract_clusters -h
         min reads per cluster to save it into a file
     --fastq
         whether input and output should be in fastq format (instead of fasta)
+    --raw
+        use this flag if want to use raw datasets
+    --lower-length
+        set the lower length for input reads filter (default: 150)
+    --upper-length
+        set the upper length for input reads filter (default: 100,000)
 
 ```
 
@@ -193,6 +212,13 @@ $ ./rattle correct -h
         number of threads to use (default: 1)
     --verbose
         use this flag if need to print the progress
+    --raw
+        use this flag if want to use raw datasets
+    --lower-length
+        set the lower length for input reads filter (default: 150)
+    --upper-length
+        set the upper length for input reads filter (default: 100,000)
+
 ```
 
 This step will generate 3 files:
@@ -222,7 +248,7 @@ $ ./rattle polish -h
 
 Input must be the consensus sequences from the previous step.
 
-# Example datasets
+# Example dataset
 
 We provide below example datasets and rattle commands. We make available all input and output files in the folder **toyset/rna**. 
 
@@ -271,11 +297,11 @@ The output generated from this step is the transcriptome.fq at ./toyset/rna/outp
 | correct  		     | 1m16.180s	   | 0m15.939s     |
 | polish  		     | 0m2.615s	     | 0m2.693s      |
 
-# Appendix: reference-based benchmarking
+# Reference based benchmarking
 
 ## ssCheck
 
-We describe here the tool **ssCheck** for the accuracy benchmarking of reads and transcripts mapped to a reference genome. ssCheck reads as input an alignment file in paf format and an annotation file in GTF format to compare with:
+We describe here the tool **ssCheck** for accuracy benchmarking of reads and transcripts mapped to a reference genome. ssCheck reads as input an alignment file in paf format and an annotation file in GTF format to compare with:
 
 ```
 python ss_check.py [-h] [--beautiful] ref.gtf aln.paf
@@ -335,9 +361,10 @@ Total introns in reads: 15323
 --> Novel: 5202 (33.95%)
 ```
 
-## Snakefile for toyset example
-User can easly adapt it for running all the Rattle step in one go. 
+# Snakemake
 
+Below we show how the user can run all steps in one go using Snakemake. We show this using the toy dataset as example. 
+This can be adapted to any other dataset.
 ```
 snakemake -s rattle_snakefile -p toyset/rna/snakemake_output/transcriptome.fq --cores 1
 

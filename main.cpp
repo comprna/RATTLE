@@ -14,7 +14,7 @@
 #include <queue>
 #include <unistd.h>
 
-read_set_t read_multiple_inputs(argagg::option_results args_input, argagg::option_results args_labels) {
+read_set_t read_multiple_inputs(argagg::option_results args_input, argagg::option_results args_labels, bool raw, int lower_len, int upper_len) {
         
         read_set_t reads;
 
@@ -45,12 +45,12 @@ read_set_t read_multiple_inputs(argagg::option_results args_input, argagg::optio
                 }
 
                 if (!extension.compare("fq") || !extension.compare("fastq")){
-                    auto file_reads = read_fastq_file(filename, sample_label);
+                    auto file_reads = read_fastq_file(filename, sample_label, raw, lower_len, upper_len);
 
                     reads.insert(std::end(reads), std::begin(file_reads), std::end(file_reads));
 
                 } else if (!extension.compare("fasta") || !extension.compare("fa")){
-                    auto file_reads = read_fasta_file(filename, sample_label);
+                    auto file_reads = read_fasta_file(filename, sample_label, raw, lower_len, upper_len);
                     reads.insert(std::end(reads), std::begin(file_reads), std::end(file_reads));
                 } else {
                     throw "\nError: Input file format incorrect! Please use fasta/fastq file. \n";
@@ -110,6 +110,12 @@ int main(int argc, char *argv[]) {
             "use this mode if data is direct RNA (disables checking both strands)", 0},
             { "verbose", {"--verbose"},
             "use this flag if need to print the progress", 0},
+            { "raw", {"--raw"},
+            "use this flag if want to use raw datasets", 0},
+            {"lower_len", {"--lower-length"},
+            "set the lower length for input reads filter (default: 150)", 1},
+            {"upper_len", {"--upper-length"},
+            "set the upper length for input reads filter (default: 100,000)", 1},
         }};
 
         argagg::parser_results args;
@@ -148,7 +154,11 @@ int main(int argc, char *argv[]) {
         int min_reads_cluster = args["min_reads_cluster"].as<int>(0);
         double repr_percentile = args["repr_percentile"].as<double>(0.15);
 
+        int lower_len = args["lower_len"].as<int>(150);
+        int upper_len = args["upper_len"].as<int>(100000);
+
         bool verbose = args["verbose"];
+        bool raw = args["raw"];
 
         if(kmer_size > 16 || iso_kmer_size > 16){
             std::cerr << "\nError: maximum kmer size = 16 \n";
@@ -164,7 +174,7 @@ int main(int argc, char *argv[]) {
         read_set_t reads;
 
         try {
-           reads = read_multiple_inputs(args["input"], args["label"]);
+           reads = read_multiple_inputs(args["input"], args["label"], raw, lower_len, upper_len);
         }
         catch (char* c) {
             std::cerr << c;
@@ -253,6 +263,12 @@ int main(int argc, char *argv[]) {
             "number of threads to use (default: 1)", 1},
             { "verbose", {"--verbose"},
             "use this flag if need to print the progress", 0},
+            {"raw", {"--raw"},
+            "use this flag if want to use raw datasets", 0},
+            {"lower_len", {"--lower-length"},
+            "set the lower length for input reads filter (default: 150)", 1},
+            {"upper_len", {"--upper-length"},
+            "set the upper length for input reads filter (default: 100,000)", 1},
         }};
 
         argagg::parser_results args;
@@ -280,12 +296,16 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
 
+        bool raw = args["raw"];
+        int lower_len = args["lower_len"].as<int>(150);
+        int upper_len = args["upper_len"].as<int>(100000);
+
         std::cerr << "Reading fasta file... ";
 
         read_set_t reads;
 
         try {
-           reads = read_multiple_inputs(args["input"], args["labels"]);
+           reads = reads = read_multiple_inputs(args["input"], args["label"], raw, lower_len, upper_len);
         }
         catch (char* c) {
             std::cerr << c;
@@ -322,6 +342,12 @@ int main(int argc, char *argv[]) {
             "labels for the files in order of entry", 1},
             { "clusters", {"-c", "--clusters"},
             "clusters file (required)", 1},
+            { "raw", {"--raw"},
+            "use this flag if want to use raw datasets", 0},  
+            { "lower_len", {"--lower-length"},
+            "set the lower length for input reads filter (default: 150)", 1},
+            { "upper_len", {"--upper-length"},
+            "set the upper length for input reads filter (default: 100,000)", 1},         
         }};
 
         argagg::parser_results args;
@@ -351,10 +377,13 @@ int main(int argc, char *argv[]) {
 
         std::cerr << "Reading fasta file... ";
         
+        bool raw = args["raw"];
+        int lower_len = args["lower_len"].as<int>(150);
+        int upper_len = args["upper_len"].as<int>(100000);
         read_set_t reads;
 
         try {
-           reads = read_multiple_inputs(args["input"], args["labels"]);
+           reads = reads = read_multiple_inputs(args["input"], args["label"], raw, lower_len, upper_len);;
         }
         catch (char* c) {
             std::cerr << c;
@@ -391,6 +420,12 @@ int main(int argc, char *argv[]) {
             "min reads per cluster to save it into a file", 1},
             { "fastq", {"--fastq"},
             "whether input and output should be in fastq format (instead of fasta)", 0},
+            {"raw", {"--raw"},
+            "use this flag if want to use raw datasets", 0},         
+            { "lower_len", {"--lower-length"},
+            "set the lower length for input reads filter (default: 150)", 1},
+            { "upper_len", {"--upper-length"},
+            "set the upper length for input reads filter (default: 100,000)", 1},
         }};
 
         argagg::parser_results args;
@@ -424,10 +459,13 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
         
+        bool raw = args["raw"];
+        int lower_len = args["lower_len"].as<int>(150);
+        int upper_len = args["upper_len"].as<int>(100000);
         read_set_t reads;
 
         try {
-           reads = read_multiple_inputs(args["input"], args["labels"]);
+           reads = read_multiple_inputs(args["input"], args["label"], raw, lower_len, upper_len);
         }
         catch (char* c) {
             std::cerr << c;
@@ -523,7 +561,7 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
         
-        read_set_t reads = read_fastq_file(args["input"]);
+        read_set_t reads = read_fastq_file(args["input"], true, 150, 100000);
 
         sort_read_set(reads);
         std::cerr << "Done" << std::endl;
