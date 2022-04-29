@@ -14,11 +14,17 @@
 #include <queue>
 #include <unistd.h>
 
-read_set_t read_multiple_inputs(argagg::option_results args_input) {
+read_set_t read_multiple_inputs(argagg::option_results args_input, argagg::option_results args_labels) {
         
         read_set_t reads;
 
         auto input_files = args_input.all;
+        auto label_files = args_labels.all;
+        bool no_labels = label_files.size() == 0;
+
+        if (input_files.size() != label_files.size() && !no_labels) {
+            throw "\nError: Number of input files and number of label files do not match\n";
+        }
 
         int sample_number = 0;
 
@@ -27,7 +33,7 @@ read_set_t read_multiple_inputs(argagg::option_results args_input) {
                 throw "\nError: Input file not found! \n";
             } else {
 
-                std::string sample_id = "S" + std::to_string(sample_number);
+                std::string sample_label = no_labels ? "" : label_files[sample_number];
                 std::string filename = i;
                 int index = filename.find_last_of(".");
                 std::string extension = filename.substr(index + 1);
@@ -39,12 +45,12 @@ read_set_t read_multiple_inputs(argagg::option_results args_input) {
                 }
 
                 if (!extension.compare("fq") || !extension.compare("fastq")){
-                    auto file_reads = read_fastq_file(filename, sample_id);
+                    auto file_reads = read_fastq_file(filename, sample_label);
 
                     reads.insert(std::end(reads), std::begin(file_reads), std::end(file_reads));
 
                 } else if (!extension.compare("fasta") || !extension.compare("fa")){
-                    auto file_reads = read_fasta_file(filename, sample_id);
+                    auto file_reads = read_fasta_file(filename, sample_label);
                     reads.insert(std::end(reads), std::begin(file_reads), std::end(file_reads));
                 } else {
                     throw "\nError: Input file format incorrect! Please use fasta/fastq file. \n";
@@ -56,7 +62,6 @@ read_set_t read_multiple_inputs(argagg::option_results args_input) {
 
         return reads;
 }
-
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -71,6 +76,8 @@ int main(int argc, char *argv[]) {
             "shows this help message", 0},
             { "input", {"-i", "--input"},
             "input fasta/fastq file (required)", 1},
+            { "label", {"-l", "--label"},
+            "labels for the files in order of entry", 1},
             { "output", {"-o", "--output"},
             "output folder (default: .)", 1},
             { "threads", {"-t", "--threads"},
@@ -149,6 +156,7 @@ int main(int argc, char *argv[]) {
         }
 
         bool is_rna = args["rna"];
+
         std::cerr << "RNA mode: " << std::boolalpha << is_rna << std::endl;
 
         std::cerr << "Reading fasta file... " << std::endl;
@@ -156,7 +164,7 @@ int main(int argc, char *argv[]) {
         read_set_t reads;
 
         try {
-           reads = read_multiple_inputs(args["input"]);
+           reads = read_multiple_inputs(args["input"], args["label"]);
         }
         catch (char* c) {
             std::cerr << c;
@@ -167,20 +175,10 @@ int main(int argc, char *argv[]) {
 
         sort_read_set(reads);
 
-        // for (auto i : reads) {
-        //     std::cerr << i.header << std::endl;
-        // }
-
         std::cerr << "Done" << std::endl;
 
         auto gene_clusters = cluster_reads(reads, kmer_size, t_s, t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, false, repr_percentile, is_rna, verbose, n_threads);
         std::ofstream out_file(args["output"].as<std::string>(".") + "/clusters.out", std::ofstream::binary);
-        
-        // for (auto i : gene_clusters) {
-        //     for (auto j : i.seqs) {
-        //         std::cerr << j.seq_id << std::endl;
-        //     }
-        // }
 
         std::cerr << "Gene clustering done" << std::endl;
         std::cerr << gene_clusters.size() << " gene clusters found" << std::endl;
@@ -226,8 +224,8 @@ int main(int argc, char *argv[]) {
             if (verbose) print_progress(i, gene_clusters.size());
         }
 
-        std::cerr << "Isoform clustering done" << std::endl;
-        std::cerr << iso_clusters.size() << " isoform clusters found" << std::endl;
+        // std::cerr << "Isoform clustering done" << std::endl;
+        // std::cerr << iso_clusters.size() << " isoform clusters found" << std::endl;
         hps::to_stream(iso_clusters, out_file);
         out_file.close();
         return EXIT_SUCCESS;
@@ -237,6 +235,8 @@ int main(int argc, char *argv[]) {
             "shows this help message", 0},
             { "input", {"-i", "--input"},
             "input fasta/fastq file (required)", 1},
+            { "labels", {"-l", "--label"},
+            "labels for the files in order of entry", 1},
             { "clusters", {"-c", "--clusters"},
             "clusters file (required)", 1},
             { "output", {"-o", "--output"},
@@ -285,7 +285,7 @@ int main(int argc, char *argv[]) {
         read_set_t reads;
 
         try {
-           reads = read_multiple_inputs(args["input"]);
+           reads = read_multiple_inputs(args["input"], args["labels"]);
         }
         catch (char* c) {
             std::cerr << c;
@@ -318,6 +318,8 @@ int main(int argc, char *argv[]) {
             "shows this help message", 0},
             { "input", {"-i", "--input"},
             "input fasta/fastq file (required)", 1},
+            { "labels", {"-l", "--label"},
+            "labels for the files in order of entry", 1},
             { "clusters", {"-c", "--clusters"},
             "clusters file (required)", 1},
         }};
@@ -352,7 +354,7 @@ int main(int argc, char *argv[]) {
         read_set_t reads;
 
         try {
-           reads = read_multiple_inputs(args["input"]);
+           reads = read_multiple_inputs(args["input"], args["labels"]);
         }
         catch (char* c) {
             std::cerr << c;
@@ -379,6 +381,8 @@ int main(int argc, char *argv[]) {
             "shows this help message", 0},
             { "input", {"-i", "--input"},
             "input fasta/fastq file (required)", 1},
+            { "labels", {"-l", "--label"},
+            "labels for the files in order of entry", 1},
             { "clusters", {"-c", "--clusters"},
             "clusters file (required)", 1},
             { "output", {"-o", "--output-folder"},
@@ -423,7 +427,7 @@ int main(int argc, char *argv[]) {
         read_set_t reads;
 
         try {
-           reads = read_multiple_inputs(args["input"]);
+           reads = read_multiple_inputs(args["input"], args["labels"]);
         }
         catch (char* c) {
             std::cerr << c;
