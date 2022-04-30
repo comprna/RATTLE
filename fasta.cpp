@@ -43,9 +43,9 @@ read_set_t read_fasta_file(std::string file, std::string sample_id, bool raw, in
     std::getline(infile, line);
     if(char (line[line.size() - 1]) == '\r'){
         isLinux = false;
-        header = line.substr(0, line.size() - 1) + "." + sample_id;
+        header = line.substr(0, line.size() - 1) + sample_id;
     } else {
-        header = line + "." + sample_id;
+        header = line + sample_id;
     }
 
     if(isLinux){
@@ -73,7 +73,7 @@ read_set_t read_fasta_file(std::string file, std::string sample_id, bool raw, in
                 }
 
                 seq = "";
-                header = line + "." + sample_id;
+                header = line + sample_id;
             } else {
                 seq += line;
             }
@@ -103,7 +103,7 @@ read_set_t read_fasta_file(std::string file, std::string sample_id, bool raw, in
                 }
 
                 seq = "";
-                header = line.substr(0, line.size() - 1) + "." + sample_id;
+                header = line.substr(0, line.size() - 1) + sample_id;
             } else {
                 seq += line.substr(0, line.size() - 1);
             }
@@ -134,17 +134,17 @@ read_set_t read_fastq_file(std::string file, std::string sample_id, bool raw, in
     std::getline(infile, line);
     if(line[line.size() - 1] == '\r'){
         isLinux = false;
-        header = line.substr(0, line.size() - 1) + "." + sample_id;
+        header = line.substr(0, line.size() - 1) + sample_id;
         lineID++;
     } else {
-        header = line + "." + sample_id;
+        header = line + sample_id;
         lineID++;
     }
 
     if(isLinux){
         while (std::getline(infile, line)) {
             if (lineID == 0) {
-                header = line + "." + sample_id;
+                header = line + sample_id;
                 ++lineID;
             } else if (lineID == 1) {
                 seq = line;
@@ -168,7 +168,7 @@ read_set_t read_fastq_file(std::string file, std::string sample_id, bool raw, in
     } else {
         while (std::getline(infile, line)) {
             if (lineID == 0) {
-                header = line.substr(0, line.size() - 1) + "." + sample_id;
+                header = line.substr(0, line.size() - 1) + sample_id;
                 ++lineID;
             } else if (lineID == 1) {
                 seq = line.substr(0, line.size() - 1);

@@ -14,12 +14,10 @@
 #include <queue>
 #include <unistd.h>
 
-read_set_t read_multiple_inputs(argagg::option_results args_input, argagg::option_results args_labels, bool raw, int lower_len, int upper_len) {
+read_set_t read_multiple_inputs(std::vector<std::string> input_files, std::vector<std::string> label_files, bool raw, int lower_len, int upper_len) {
         
         read_set_t reads;
 
-        auto input_files = args_input.all;
-        auto label_files = args_labels.all;
         bool no_labels = label_files.size() == 0;
 
         if (input_files.size() != label_files.size() && !no_labels) {
@@ -33,7 +31,7 @@ read_set_t read_multiple_inputs(argagg::option_results args_input, argagg::optio
                 throw "\nError: Input file not found! \n";
             } else {
 
-                std::string sample_label = no_labels ? "" : label_files[sample_number];
+                std::string sample_label = no_labels ? "" : "." + label_files[sample_number];
                 std::string filename = i;
                 int index = filename.find_last_of(".");
                 std::string extension = filename.substr(index + 1);
@@ -61,6 +59,18 @@ read_set_t read_multiple_inputs(argagg::option_results args_input, argagg::optio
         }
 
         return reads;
+}
+
+std::vector<std::string> splitString(std::string str, char delimiter) {
+    std::vector<std::string> internal;
+    std::stringstream ss(str); // Turn the string into a stream.
+    std::string tok;
+
+    while(getline(ss, tok, delimiter)) {
+        internal.push_back(tok);
+    }
+
+    return internal;
 }
 
 int main(int argc, char *argv[]) {
@@ -173,8 +183,11 @@ int main(int argc, char *argv[]) {
 
         read_set_t reads;
 
+        std::vector<std::string> files = splitString(args["input"].as<std::string>(""), ',');
+        std::vector<std::string> labels = splitString(args["label"].as<std::string>(""), ',');;
+
         try {
-           reads = read_multiple_inputs(args["input"], args["label"], raw, lower_len, upper_len);
+           reads = read_multiple_inputs(files, labels, raw, lower_len, upper_len);
         }
         catch (char* c) {
             std::cerr << c;
@@ -245,7 +258,7 @@ int main(int argc, char *argv[]) {
             "shows this help message", 0},
             { "input", {"-i", "--input"},
             "input fasta/fastq file (required)", 1},
-            { "labels", {"-l", "--label"},
+            { "label", {"-l", "--label"},
             "labels for the files in order of entry", 1},
             { "clusters", {"-c", "--clusters"},
             "clusters file (required)", 1},
@@ -304,8 +317,11 @@ int main(int argc, char *argv[]) {
 
         read_set_t reads;
 
+        std::vector<std::string> files = splitString(args["input"].as<std::string>(""), ',');
+        std::vector<std::string> labels = splitString(args["label"].as<std::string>(""), ',');;
+
         try {
-           reads = reads = read_multiple_inputs(args["input"], args["label"], raw, lower_len, upper_len);
+           reads = read_multiple_inputs(files, labels, raw, lower_len, upper_len);
         }
         catch (char* c) {
             std::cerr << c;
@@ -338,7 +354,7 @@ int main(int argc, char *argv[]) {
             "shows this help message", 0},
             { "input", {"-i", "--input"},
             "input fasta/fastq file (required)", 1},
-            { "labels", {"-l", "--label"},
+            { "label", {"-l", "--label"},
             "labels for the files in order of entry", 1},
             { "clusters", {"-c", "--clusters"},
             "clusters file (required)", 1},
@@ -382,8 +398,11 @@ int main(int argc, char *argv[]) {
         int upper_len = args["upper_len"].as<int>(100000);
         read_set_t reads;
 
+        std::vector<std::string> files = splitString(args["input"].as<std::string>(""), ',');
+        std::vector<std::string> labels = splitString(args["label"].as<std::string>(""), ',');;
+
         try {
-           reads = reads = read_multiple_inputs(args["input"], args["label"], raw, lower_len, upper_len);;
+           reads = read_multiple_inputs(files, labels, raw, lower_len, upper_len);
         }
         catch (char* c) {
             std::cerr << c;
@@ -410,7 +429,7 @@ int main(int argc, char *argv[]) {
             "shows this help message", 0},
             { "input", {"-i", "--input"},
             "input fasta/fastq file (required)", 1},
-            { "labels", {"-l", "--label"},
+            { "label", {"-l", "--label"},
             "labels for the files in order of entry", 1},
             { "clusters", {"-c", "--clusters"},
             "clusters file (required)", 1},
@@ -454,18 +473,17 @@ int main(int argc, char *argv[]) {
         }
 
         std::cerr << "Reading fasta file... ";
-        if(access(args["input"], F_OK )){
-            std::cerr << "\nError: Input file not found! \n";
-            return EXIT_FAILURE;
-        }
         
         bool raw = args["raw"];
         int lower_len = args["lower_len"].as<int>(150);
         int upper_len = args["upper_len"].as<int>(100000);
         read_set_t reads;
 
+        std::vector<std::string> files = splitString(args["input"].as<std::string>(""), ',');
+        std::vector<std::string> labels = splitString(args["label"].as<std::string>(""), ',');;
+
         try {
-           reads = read_multiple_inputs(args["input"], args["label"], raw, lower_len, upper_len);
+           reads = read_multiple_inputs(files, labels, raw, lower_len, upper_len);
         }
         catch (char* c) {
             std::cerr << c;
