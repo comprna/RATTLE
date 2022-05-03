@@ -246,6 +246,8 @@ $ ./rattle polish -h
         input RATTLE consensi fasta/fastq file (required)
     -o, --output-folder
         output folder for fastx files (default: .)
+    -l, --label
+        labels for the files, same as previous steps (required)
     -t, --threads
         number of threads to use (default: 1)
     --rna

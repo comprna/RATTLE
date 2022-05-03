@@ -318,7 +318,7 @@ int main(int argc, char *argv[]) {
         read_set_t reads;
 
         std::vector<std::string> files = splitString(args["input"].as<std::string>(""), ',');
-        std::vector<std::string> labels = splitString(args["label"].as<std::string>(""), ',');;
+        std::vector<std::string> labels = splitString(args["label"].as<std::string>(""), ',');
 
         try {
            reads = read_multiple_inputs(files, labels, raw, lower_len, upper_len);
@@ -399,7 +399,7 @@ int main(int argc, char *argv[]) {
         read_set_t reads;
 
         std::vector<std::string> files = splitString(args["input"].as<std::string>(""), ',');
-        std::vector<std::string> labels = splitString(args["label"].as<std::string>(""), ',');;
+        std::vector<std::string> labels = splitString(args["label"].as<std::string>(""), ',');
 
         try {
            reads = read_multiple_inputs(files, labels, raw, lower_len, upper_len);
@@ -480,7 +480,7 @@ int main(int argc, char *argv[]) {
         read_set_t reads;
 
         std::vector<std::string> files = splitString(args["input"].as<std::string>(""), ',');
-        std::vector<std::string> labels = splitString(args["label"].as<std::string>(""), ',');;
+        std::vector<std::string> labels = splitString(args["label"].as<std::string>(""), ',');
 
         try {
            reads = read_multiple_inputs(files, labels, raw, lower_len, upper_len);
@@ -546,6 +546,8 @@ int main(int argc, char *argv[]) {
             "input RATTLE consensi fasta/fastq file (required)", 1},
             { "output", {"-o", "--output-folder"},
             "output folder for fastx files (default: .)", 1},
+            { "label", {"-l", "--label"},
+            "labels for the files in order of entry", 1},
             { "threads", {"-t", "--threads"},
             "number of threads to use (default: 1)", 1},
             { "rna", {"--rna"},
@@ -587,6 +589,7 @@ int main(int argc, char *argv[]) {
         int n_threads = args["threads"].as<int>(1);
         bool is_rna = args["rna"];
         bool verbose = args["verbose"];
+        std::vector<std::string> labels = splitString(args["label"].as<std::string>(""), ',');
 
         std::cerr << "Clustering consensus sequences..." << std::endl;
         auto clusters = cluster_reads(reads, 6, 0.5, 25, 0.4, 0.4, 0.05, 0, false, 0.15, is_rna, verbose, n_threads);
@@ -596,14 +599,34 @@ int main(int argc, char *argv[]) {
         for (auto &r: correction.consensi) {
             int total_reads = 0;
             auto creads = clusters[cid].seqs;
+            std::vector<int> label_counts(labels.size());
 
             for (auto &s: creads) {
                 auto info = split(reads[s.seq_id].header, '=');
                 int rcount = std::stoi(info[1]);
                 total_reads += rcount;
+                // reads[s.seq_id].header contains the information that we need
+                // std::cout << reads[s.seq_id].header << std::endl;
+                int i = 0;
+                for(auto label: labels){
+                    if(reads[s.seq_id].header.find(label) != std::string::npos){
+                        int index = reads[s.seq_id].header.find(label);
+                        std::string sub = reads[s.seq_id].header.substr(index + 1);
+                        index = sub.find_first_of(":");
+                        // std::cout << label << "  " << sub.substr(index + 1) << "  " << std::stoi(sub.substr(index + 1)) << std::endl;
+                        label_counts[i] += std::stoi(sub.substr(index + 1));
+                    }
+                    ++i;
+                }
             }
 
-            r.header += " total_reads=" + std::to_string(total_reads);
+            int index = r.header.find("labels");
+            r.header = r.header.substr(0, index) + " total_reads=" + std::to_string(total_reads) + " labels:";
+            int i = 0;
+            for(auto label: labels){
+                r.header += label + ":" + std::to_string(label_counts[i]) + " ";
+                ++i;
+            }
             cid++;
         }
 
