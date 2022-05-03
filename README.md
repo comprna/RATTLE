@@ -95,6 +95,8 @@ $ ./rattle cluster -h
         shows this help message
     -i, --input
         input fasta/fastq file or compressed with .gz extension, will automatically check file extension (required)
+    -l, --label
+        labels for the files in order of entry" (requird)
     -o, --output
         output folder (default: .)
     -t, --threads
@@ -144,6 +146,8 @@ $ ./rattle cluster_summary -h
         shows this help message
     -i, --input
         input fasta/fastq file (required)
+    -l, --label
+        labels for the files in order of entry" (requird)
     -c, --clusters
         clusters file (required)
     --raw
@@ -167,6 +171,8 @@ $ ./rattle extract_clusters -h
         shows this help message
     -i, --input
         input fasta/fastq file (required)
+    -l, --label
+        labels for the files in order of entry" (requird)
     -c, --clusters
         clusters file (required)
     -o, --output-folder
@@ -196,6 +202,8 @@ $ ./rattle correct -h
         shows this help message
     -i, --input
         input fasta/fastq file (required)
+    -l, --label
+        labels for the files in order of entry" (requird)
     -c, --clusters
         clusters file (required)
     -o, --output

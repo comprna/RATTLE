@@ -31,7 +31,7 @@ read_set_t read_multiple_inputs(std::vector<std::string> input_files, std::vecto
                 throw "\nError: Input file not found! \n";
             } else {
 
-                std::string sample_label = no_labels ? "" : "." + label_files[sample_number];
+                std::string sample_label = no_labels ? "" : "," + label_files[sample_number];
                 std::string filename = i;
                 int index = filename.find_last_of(".");
                 std::string extension = filename.substr(index + 1);
@@ -340,7 +340,7 @@ int main(int argc, char *argv[]) {
         int min_reads = args["min-reads"].as<int>(5);
         bool verbose = args["verbose"];
 
-        correction_results_t correction = correct_reads(clusters, reads, min_occ, gap_occ, 30.0, split, min_reads, n_threads, verbose);
+        correction_results_t correction = correct_reads(clusters, reads, min_occ, gap_occ, 30.0, split, min_reads, n_threads, verbose, labels);
         write_fastq_file(correction.corrected, args["output"].as<std::string>(".") + "/corrected.fq");
         write_fastq_file(correction.uncorrected, args["output"].as<std::string>(".") + "/uncorrected.fq");
         write_fastq_file(correction.consensi, args["output"].as<std::string>(".") + "/consensi.fq");
@@ -590,7 +590,7 @@ int main(int argc, char *argv[]) {
 
         std::cerr << "Clustering consensus sequences..." << std::endl;
         auto clusters = cluster_reads(reads, 6, 0.5, 25, 0.4, 0.4, 0.05, 0, false, 0.15, is_rna, verbose, n_threads);
-        auto correction = correct_reads(clusters, reads, 0.3, 0.3, 30.0, 200, 0, n_threads, verbose);
+        auto correction = correct_reads(clusters, reads, 0.3, 0.3, 30.0, 200, 0, n_threads, verbose, {});
 
         int cid = 0;
         for (auto &r: correction.consensi) {
