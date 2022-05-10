@@ -532,7 +532,7 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
 
         int  i = 0;
         for(auto label: labels){
-            labels_result += label + ":" + std::to_string(label_counts[i]) + " ";
+            labels_result += label + ":" + std::to_string(label_counts[i]) + ",";
             ++i;
         }
 
@@ -568,10 +568,10 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
             cv.consensus_nt.erase(std::remove(cv.consensus_nt.begin(), cv.consensus_nt.end(), '-'), cv.consensus_nt.end());
             std::string consensus(cv.consensus_nt.begin(), cv.consensus_nt.end());
 
-            consensus_set.push_back(read_t{"@cluster_" + std::to_string(cid) + " reads=" + std::to_string(total_reads) + " labels:" + labels_result, consensus, "+", std::string(consensus.size(), 'K')});
+            consensus_set.push_back(read_t{"@cluster_" + std::to_string(cid) + " reads=" + std::to_string(total_reads) + " labels=" + labels_result, consensus, "+", std::string(consensus.size(), 'K')});
         } else {
             if (it.size() > 0) {
-                consensus_set.push_back(read_t{"@cluster_" + std::to_string(cid) + " reads=" + std::to_string(total_reads) + " labels:" + labels_result, it[0].seq, "+", it[0].quality});
+                consensus_set.push_back(read_t{"@cluster_" + std::to_string(cid) + " reads=" + std::to_string(total_reads) + " labels=" + labels_result, it[0].seq, "+", it[0].quality});
             }
         }
 

@@ -621,10 +621,10 @@ int main(int argc, char *argv[]) {
             }
 
             int index = r.header.find("labels");
-            r.header = r.header.substr(0, index) + " total_reads=" + std::to_string(total_reads) + " labels:";
+            r.header = r.header.substr(0, index) + " total_reads=" + std::to_string(total_reads) + " labels=";
             int i = 0;
             for(auto label: labels){
-                r.header += label + ":" + std::to_string(label_counts[i]) + " ";
+                r.header += label + ":" + std::to_string(label_counts[i]) + ",";
                 ++i;
             }
             cid++;
