@@ -48,38 +48,38 @@ We provide here some of the most common commands used when running RATTLE.
 
 * Cluster cDNA Nanopore reads at gene level with 24 threads
 ```
-$ ./rattle cluster -i reads.fq -t 24 -o . 
+$ ./rattle cluster -i reads.fq -l L1 -t 24 -o . 
 ```
 
 * Cluster cDNA Nanopore reads at isoform level with 24 threads
 ```
-$ ./rattle cluster -i reads.fq -t 24 --iso
+$ ./rattle cluster -i reads.fq -l L1 -t 24 -o . --iso
 ```
 
 * Cluster RNA Nanopore reads at isoform level with 24 threads
 ```
-$ ./rattle cluster -i reads.fq -t 24 --iso --rna
+$ ./rattle cluster -i reads.fq -l L1 -t 24 -o . --iso --rna
 ```
 
 * View clustering summary (csv with read_id,cluster_id)
 ```
-$ ./rattle cluster_summary -i reads.fq -c clusters.out
+$ ./rattle cluster_summary -i reads.fq -c clusters.out -l L1
 ```
 
 * Extract 1 fastq file per cluster in clusters/ folder
 ```
 $ mkdir clusters
-$ ./rattle extract_clusters -i reads.fq -c transcripts.out -o clusters --fastq
+$ ./rattle extract_clusters -i reads.fq -c transcripts.out -l L1 -o clusters --fastq
 ```
 
 * Correct reads with 24 threads using isoform clusters
 ```
-$ ./rattle correct -i reads.fq -c clusters.out -t 24
+$ ./rattle correct -i reads.fq -c clusters.out -l L1 -t 24 -o .
 ```
 
 * Polish RNA consensus sequences and build final transcriptome using 24 threads
 ```
-$ ./rattle polish -i consensi.fq -t 24 --rna
+$ ./rattle polish -i consensi.fq -l L1 -t 24 -o . --rna
 ```
 
 # Running RATTLE
