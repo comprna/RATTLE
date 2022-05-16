@@ -102,7 +102,7 @@ $ ./rattle cluster -h
     -i, --input
         input fasta/fastq file or compressed with .gz extension, will automatically check file extension (required)
     -l, --label
-        labels for the files in order of entry" (optional)
+        labels for the files in order of entry (optional)
     -o, --output
         output folder (default: .)
     -t, --threads
@@ -153,7 +153,7 @@ $ ./rattle cluster_summary -h
     -i, --input
         input fasta/fastq file (required)
     -l, --label
-        labels for the files in order of entry" (optional)
+        labels for the files in order of entry (optional)
     -c, --clusters
         clusters file (required)
     --raw
@@ -178,7 +178,7 @@ $ ./rattle extract_clusters -h
     -i, --input
         input fasta/fastq file (required)
     -l, --label
-        labels for the files in order of entry" (optional)
+        labels for the files in order of entry (optional)
     -c, --clusters
         clusters file (required)
     -o, --output-folder
@@ -209,7 +209,7 @@ $ ./rattle correct -h
     -i, --input
         input fasta/fastq file (required)
     -l, --label
-        labels for the files in order of entry" (optional)
+        labels for the files in order of entry (optional)
     -c, --clusters
         clusters file (required)
     -o, --output
@@ -253,7 +253,7 @@ $ ./rattle polish -h
     -o, --output-folder
         output folder for fastx files (default: .)
     -l, --label
-        labels for the files, if used must be same as previous steps (optional)
+        labels for the files. if used, must be same as previous steps (optional)
     -t, --threads
         number of threads to use (default: 1)
     --rna
