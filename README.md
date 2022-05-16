@@ -48,38 +48,43 @@ We provide here some of the most common commands used when running RATTLE.
 
 * Cluster cDNA Nanopore reads at gene level with 24 threads
 ```
+$ ./rattle cluster -i reads.fq -t 24 -o . 
+```
+
+* Cluster cDNA Nanopore reads with labels at gene level with 24 threads
+```
 $ ./rattle cluster -i reads.fq -l L1 -t 24 -o . 
 ```
 
 * Cluster cDNA Nanopore reads at isoform level with 24 threads
 ```
-$ ./rattle cluster -i reads.fq -l L1 -t 24 -o . --iso
+$ ./rattle cluster -i reads.fq -t 24 --iso
 ```
 
 * Cluster RNA Nanopore reads at isoform level with 24 threads
 ```
-$ ./rattle cluster -i reads.fq -l L1 -t 24 -o . --iso --rna
+$ ./rattle cluster -i reads.fq -t 24 --iso --rna
 ```
 
 * View clustering summary (csv with read_id,cluster_id)
 ```
-$ ./rattle cluster_summary -i reads.fq -c clusters.out -l L1
+$ ./rattle cluster_summary -i reads.fq -c clusters.out
 ```
 
 * Extract 1 fastq file per cluster in clusters/ folder
 ```
 $ mkdir clusters
-$ ./rattle extract_clusters -i reads.fq -c transcripts.out -l L1 -o clusters --fastq
+$ ./rattle extract_clusters -i reads.fq -c transcripts.out -o clusters --fastq
 ```
 
 * Correct reads with 24 threads using isoform clusters
 ```
-$ ./rattle correct -i reads.fq -c clusters.out -l L1 -t 24 -o .
+$ ./rattle correct -i reads.fq -c clusters.out -t 24
 ```
 
 * Polish RNA consensus sequences and build final transcriptome using 24 threads
 ```
-$ ./rattle polish -i consensi.fq -l L1 -t 24 -o . --rna
+$ ./rattle polish -i consensi.fq -t 24 --rna
 ```
 
 # Running RATTLE
@@ -97,7 +102,7 @@ $ ./rattle cluster -h
     -i, --input
         input fasta/fastq file or compressed with .gz extension, will automatically check file extension (required)
     -l, --label
-        labels for the files in order of entry" (requird)
+        labels for the files in order of entry" (optional)
     -o, --output
         output folder (default: .)
     -t, --threads
@@ -148,7 +153,7 @@ $ ./rattle cluster_summary -h
     -i, --input
         input fasta/fastq file (required)
     -l, --label
-        labels for the files in order of entry" (requird)
+        labels for the files in order of entry" (optional)
     -c, --clusters
         clusters file (required)
     --raw
@@ -173,7 +178,7 @@ $ ./rattle extract_clusters -h
     -i, --input
         input fasta/fastq file (required)
     -l, --label
-        labels for the files in order of entry" (requird)
+        labels for the files in order of entry" (optional)
     -c, --clusters
         clusters file (required)
     -o, --output-folder
@@ -204,7 +209,7 @@ $ ./rattle correct -h
     -i, --input
         input fasta/fastq file (required)
     -l, --label
-        labels for the files in order of entry" (requird)
+        labels for the files in order of entry" (optional)
     -c, --clusters
         clusters file (required)
     -o, --output
@@ -248,7 +253,7 @@ $ ./rattle polish -h
     -o, --output-folder
         output folder for fastx files (default: .)
     -l, --label
-        labels for the files, same as previous steps (required)
+        labels for the files, if used must be same as previous steps (optional)
     -t, --threads
         number of threads to use (default: 1)
     --rna
