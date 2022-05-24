@@ -126,7 +126,7 @@ $ ./rattle cluster -h
     --rna
         use this mode if data is direct RNA (disables checking both strands)
     --verbose
-        use this flag if need to print the progress
+        use this flag to print the progress of the run
     --raw
         use this flag if want to use raw datasets
     --lower-length
@@ -211,7 +211,7 @@ $ ./rattle correct -h
     -t, --threads
         number of threads to use (default: 1)
     --verbose
-        use this flag if need to print the progress
+        use this flag to print the progress of the run
     --raw
         use this flag if want to use raw datasets
     --lower-length
@@ -243,7 +243,7 @@ $ ./rattle polish -h
     --rna
         use this mode if data is direct RNA (disables checking both strands)
     --verbose
-        use this flag if need to print the progress
+        use this flag to print the progress of the run
 ```
 
 Input must be the consensus sequences from the previous step.
