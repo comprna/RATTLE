@@ -145,14 +145,7 @@ $ ./rattle cluster_summary -h
     -i, --input
         input fasta/fastq file (required)
     -c, --clusters
-        clusters file (required)
-    --raw
-        use this flag if want to use raw datasets
-    --lower-length
-        set the lower length for input reads filter (default: 150)
-    --upper-length
-        set the upper length for input reads filter (default: 100,000)
-
+        clusters file. This is the output file from clustering step (required)
 ```
 
 This command will output a CSV file to stdout containing two columns:
@@ -291,11 +284,11 @@ The output generated from this step is the transcriptome.fq at ./toyset/rna/outp
 
 | command          | 1 thread      | 24 threads    |	
 | :----------------|:-------------:| :-------------|
-| cluster 	       |	0m21.302s    |0m8.457s       |
-| cluster_summary  | 0m0.068s      |-              |
+| cluster 	       | 0m21.302s     |0m8.457s       |
+| cluster_summary  |  0m0.068s     |-              |
 | extract_clusters |	0m0.079s	   |-              |  
 | correct  		     | 1m16.180s	   | 0m15.939s     |
-| polish  		     | 0m2.615s	     | 0m2.693s      |
+| polish  		     |  0m2.615s	   | 0m2.693s      |
 
 # Reference based benchmarking
 
