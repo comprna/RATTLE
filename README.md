@@ -161,7 +161,7 @@ $ ./rattle extract_clusters -h
     -i, --input
         input fasta/fastq file (required)
     -c, --clusters
-        clusters file (required)
+        clusters file. This is the output file from clustering step (required)
     -o, --output-folder
         output folder for fastx files (default: .)
     -m, --min-reads
