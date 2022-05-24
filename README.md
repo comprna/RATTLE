@@ -128,11 +128,11 @@ $ ./rattle cluster -h
     --verbose
         use this flag to print the progress of the run
     --raw
-        use this flag if want to use raw datasets
+        set this flag to use all the reads without any length filtering (off by default)
     --lower-length
-        set the lower length for input reads filter (default: 150)
+        filter out reads shorter than this value (default: 150)
     --upper-length
-        set the upper length for input reads filter (default: 100,000)
+        filter out reads longer than this value (default: 100,000)
 ```
 
 This clustering step will generate a file containing read clusters in binary format (clusters.out). To work with these clusters, the following commands are used.
