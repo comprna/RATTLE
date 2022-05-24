@@ -190,7 +190,7 @@ $ ./rattle correct -h
     -i, --input
         input fasta/fastq file (required)
     -c, --clusters
-        clusters file (required)
+        clusters file. This is the output file from clustering step (required)
     -o, --output
         output folder (default: .)
     -g, --gap-occ
