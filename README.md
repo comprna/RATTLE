@@ -200,7 +200,7 @@ $ ./rattle correct -h
     -s, --split
         split clusters into sub-clusters of size s for the multiple sequence alignment (default: 200)
     -r, --min-reads
-        min reads to correct/output consensus for a cluster (default: 5)
+        lower bound in the number of reads in a cluster to do the correction and produce a consensus (default: 5)
     -t, --threads
         number of threads to use (default: 1)
     --verbose
