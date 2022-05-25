@@ -151,7 +151,21 @@ int main(int argc, char *argv[]) {
         
         std::cerr << "Gene clustering done" << std::endl;
         std::cerr << gene_clusters.size() << " gene clusters found" << std::endl;
+
         if (!args["iso"]) {
+            // for (auto &c : gene_clusters) {
+            //     auto info = split(reads[c.main_seq.seq_id].header, ' ');
+            //     int seqID = std::stoi(info[0]);
+            //     std::cout << seqID << " " << c.main_seq.seq_id << std::endl;
+            //     c.main_seq.seq_id = seqID;
+                
+            //     for (auto &cs : c.seqs) {
+            //         auto info = split(reads[cs.seq_id].header, ' ');
+            //         int seqID = std::stoi(info[0]);
+            //         std::cout << seqID << " " << cs.seq_id << std::endl;
+            //         cs.seq_id = seqID;
+            //     }
+            // }    
             hps::to_stream(gene_clusters, out_file);
             out_file.close();
             return EXIT_SUCCESS;
@@ -189,6 +203,21 @@ int main(int argc, char *argv[]) {
                 iso_clusters.push_back(iso_cluster);
             }
 
+            // for (auto &ic : iso_clusters_tmp) {
+            //     cluster_t iso_cluster;
+            //     auto info = split(reads[ic.main_seq.seq_id].header, ' ');
+            //     int seqID = std::stoi(info[0]);
+            //     iso_cluster.main_seq = cseq_t{seqID, ic.main_seq.rev};
+
+            //     for (auto &ics : ic.seqs) {
+            //         auto info = split(reads[ics.seq_id].header, ' ');
+            //         int seqID = std::stoi(info[0]);
+            //         iso_cluster.seqs.push_back(cseq_t{c.seqs[ics.seq_id].seq_id, ics.rev});
+            //     }
+
+            //     iso_clusters.push_back(iso_cluster);
+            // }
+
             ++i;
             if (verbose) print_progress(i, gene_clusters.size());
         }
@@ -220,12 +249,6 @@ int main(int argc, char *argv[]) {
             "number of threads to use (default: 1)", 1},
             { "verbose", {"--verbose"},
             "use this flag if need to print the progress", 0},
-            {"raw", {"--raw"},
-            "use this flag if want to use raw datasets", 0},
-            {"lower_len", {"--lower-length"},
-            "set the lower length for input reads filter (default: 150)", 1},
-            {"upper_len", {"--upper-length"},
-            "set the upper length for input reads filter (default: 100,000)", 1},
         }};
 
         argagg::parser_results args;
@@ -253,10 +276,6 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
 
-        bool raw = args["raw"];
-        int lower_len = args["lower_len"].as<int>(150);
-        int upper_len = args["upper_len"].as<int>(100000);
-
         std::cerr << "Reading fasta file... ";
         read_set_t reads;
         if(access(args["input"], F_OK )){
@@ -267,9 +286,9 @@ int main(int argc, char *argv[]) {
             int i = filename.find_last_of(".");
             std::string extension = filename.substr(i + 1);
             if (!extension.compare("fq") || !extension.compare("fastq")){
-                reads = read_fastq_file(args["input"], raw, lower_len, upper_len);
+                reads = read_fastq_file(args["input"]);
             } else if (!extension.compare("fasta") || !extension.compare("fa")){
-                reads = read_fasta_file(args["input"], raw, lower_len, upper_len);
+                reads = read_fasta_file(args["input"]);
             } else {
                 std::cerr << "\nError: Input file format incorrect! Please use fasta/fastq file. \n";
                 return EXIT_FAILURE;
@@ -303,13 +322,7 @@ int main(int argc, char *argv[]) {
             { "input", {"-i", "--input"},
             "input fasta/fastq file (required)", 1},
             { "clusters", {"-c", "--clusters"},
-            "clusters file (required)", 1},
-            { "raw", {"--raw"},
-            "use this flag if want to use raw datasets", 0},  
-            { "lower_len", {"--lower-length"},
-            "set the lower length for input reads filter (default: 150)", 1},
-            { "upper_len", {"--upper-length"},
-            "set the upper length for input reads filter (default: 100,000)", 1},         
+            "clusters file (required)", 1},        
         }};
 
         argagg::parser_results args;
@@ -339,9 +352,6 @@ int main(int argc, char *argv[]) {
 
         std::cerr << "Reading fasta file... ";
         
-        bool raw = args["raw"];
-        int lower_len = args["lower_len"].as<int>(150);
-        int upper_len = args["upper_len"].as<int>(100000);
         read_set_t reads;
         if(access(args["input"], F_OK )){
             std::cerr << "\nError: Input file not found! \n";
@@ -351,9 +361,9 @@ int main(int argc, char *argv[]) {
             int i = filename.find_last_of(".");
             std::string extension = filename.substr(i + 1);
             if (!extension.compare("fq") || !extension.compare("fastq")){
-                reads = read_fastq_file(args["input"], raw, lower_len, upper_len);
+                reads = read_fastq_file(args["input"]);
             } else if (!extension.compare("fasta") || !extension.compare("fa")){
-                reads = read_fasta_file(args["input"], raw, lower_len, upper_len);
+                reads = read_fasta_file(args["input"]);
             } else {
                 std::cerr << "\nError: Input file format incorrect! Please use fasta/fastq file. \n";
                 return EXIT_FAILURE;
@@ -388,12 +398,6 @@ int main(int argc, char *argv[]) {
             "min reads per cluster to save it into a file", 1},
             { "fastq", {"--fastq"},
             "whether input and output should be in fastq format (instead of fasta)", 0},
-            {"raw", {"--raw"},
-            "use this flag if want to use raw datasets", 0},         
-            { "lower_len", {"--lower-length"},
-            "set the lower length for input reads filter (default: 150)", 1},
-            { "upper_len", {"--upper-length"},
-            "set the upper length for input reads filter (default: 100,000)", 1},
         }};
 
         argagg::parser_results args;
@@ -426,15 +430,12 @@ int main(int argc, char *argv[]) {
             std::cerr << "\nError: Input file not found! \n";
             return EXIT_FAILURE;
         }
-        
-        bool raw = args["raw"];
-        int lower_len = args["lower_len"].as<int>(150);
-        int upper_len = args["upper_len"].as<int>(100000);
+
         read_set_t reads;
         if (args["fastq"]) {
-            reads = read_fastq_file(args["input"], raw, lower_len, upper_len);
+            reads = read_fastq_file(args["input"]);
         } else {
-            reads = read_fasta_file(args["input"], raw, lower_len, upper_len);
+            reads = read_fasta_file(args["input"]);
         }
 
         sort_read_set(reads);

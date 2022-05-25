@@ -37,6 +37,87 @@ read_set_t read_fasta_file(std::string file, bool raw, int lower_len, int upper_
     std::string line;
     std::string header;
     std::string seq;
+    bool isLinux = true;
+    int readID = 0;
+
+    // Setting the FASTA format quality value to the maximum value '~' for correction and polish step
+    std::getline(infile, line);
+    if(char (line[line.size() - 1]) == '\r'){
+        isLinux = false;
+        header = std::to_string(readID) + " " + line.substr(0, line.size() - 1);
+        ++readID;
+    } else {
+        header = std::to_string(readID) + " " + line;
+        ++readID;
+    }
+
+    if(isLinux){
+        while (std::getline(infile, line)) {
+            if (line.size() == 0) continue;
+
+            if (line[0] == '>') {
+                if (!header.empty()) {
+                    std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
+                    if(raw){
+                        read_t r{header, seq, "", ""};
+                        result.push_back(r);
+                    } else if( seq.length() >= lower_len && seq.length() <= upper_len){
+                        read_t r{header, seq, "", ""};
+                        result.push_back(r);
+                    } 
+                }
+
+                seq = "";
+                header = std::to_string(readID) + " " + line;
+                ++readID;
+            } else {
+                seq += line;
+            }
+        }
+    } else {
+        while (std::getline(infile, line)) {
+            if (line.size() == 0) continue;
+
+            if (line[0] == '>') {
+                if (!header.empty()) {
+                    std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
+                    if(raw){
+                        read_t r{header, seq, "", ""};
+                        result.push_back(r);
+                    } else if( seq.length() >= lower_len && seq.length() <= upper_len){
+                        read_t r{header, seq, "", ""};
+                        result.push_back(r);
+                    } 
+                }
+
+                seq = "";
+                header = std::to_string(readID) + " " + line.substr(0, line.size() - 1);
+                ++readID;
+            } else {
+                seq += line.substr(0, line.size() - 1);
+            }
+         }     
+    }
+
+    std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
+    if(raw){
+        read_t r{header, seq, "", ""};
+        result.push_back(r);
+    } else if( seq.length() >= lower_len && seq.length() <= upper_len){
+        read_t r{header, seq, "", ""};
+        result.push_back(r);
+    } 
+    
+    return result;
+}
+
+read_set_t read_fasta_file(std::string file) {
+    read_set_t result;
+
+    std::ifstream infile(file);
+    std::string line;
+    std::string header;
+    std::string seq;
     std::string qt = "";
     bool isLinux = true;
 
@@ -56,21 +137,12 @@ read_set_t read_fasta_file(std::string file, bool raw, int lower_len, int upper_
             if (line[0] == '>') {
                 if (!header.empty()) {
                     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-                    if(raw){
-                        for(int i = 0; i < seq.size(); i++){
-                            qt += '~';
-                        }
-                        read_t r{header, seq, "", qt};
-                        result.push_back(r);
-                        qt = "";
-                    } else if( seq.length() >= lower_len && seq.length() <= upper_len){
-                        for(int i = 0; i < seq.size(); i++){
-                            qt += '~';
-                        }
-                        read_t r{header, seq, "", qt};
-                        result.push_back(r);
-                        qt = "";
-                    } 
+                    for(int i = 0; i < seq.size(); i++){
+                        qt += '~';
+                    }
+                    read_t r{header, seq, "", qt};
+                    result.push_back(r);
+                    qt = "";
                 }
 
                 seq = "";
@@ -86,21 +158,12 @@ read_set_t read_fasta_file(std::string file, bool raw, int lower_len, int upper_
             if (line[0] == '>') {
                 if (!header.empty()) {
                     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-                    if(raw){
-                        for(int i = 0; i < seq.size(); i++){
-                            qt += '~';
-                        }
-                        read_t r{header, seq, "", qt};
-                        result.push_back(r);
-                        qt = "";
-                    } else if( seq.length() >= lower_len && seq.length() <= upper_len){
-                        for(int i = 0; i < seq.size(); i++){
-                            qt += '~';
-                        }
-                        read_t r{header, seq, "", qt};
-                        result.push_back(r);
-                        qt = "";
-                    } 
+                    for(int i = 0; i < seq.size(); i++){
+                        qt += '~';
+                    }
+                    read_t r{header, seq, "", qt};
+                    result.push_back(r);
+                    qt = "";
                 }
 
                 seq = "";
@@ -112,21 +175,12 @@ read_set_t read_fasta_file(std::string file, bool raw, int lower_len, int upper_
     }
 
     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-    if(raw){
-        for(int i = 0; i < seq.size(); i++){
-            qt += '~';
-        }
-        read_t r{header, seq, "", qt};
-        result.push_back(r);
-        qt = "";
-    } else if( seq.length() >= lower_len && seq.length() <= upper_len){
-        for(int i = 0; i < seq.size(); i++){
-            qt += '~';
-        }
-        read_t r{header, seq, "", qt};
-        result.push_back(r);
-        qt = "";
-    } 
+    for(int i = 0; i < seq.size(); i++){
+        qt += '~';
+    }
+    read_t r{header, seq, "", qt};
+    result.push_back(r);
+    qt = "";
     
     return result;
 }
@@ -141,23 +195,27 @@ read_set_t read_fastq_file(std::string file, bool raw, int lower_len, int upper_
     std::string ann;
     std::string qt;
     int lineID = 0;
+    int readID = 0;
     bool isLinux = true;
 
     std::getline(infile, line);
     if(line[line.size() - 1] == '\r'){
         isLinux = false;
-        header = line.substr(0, line.size() - 1);
-        lineID++;
+        header = std::to_string(readID) + " " + line.substr(0, line.size() - 1);
+        ++lineID;
+        ++readID;
     } else {
-        header = line;
-        lineID++;
+        header = std::to_string(readID) + " " + line;
+        ++lineID;
+        ++readID;
     }
 
     if(isLinux){
         while (std::getline(infile, line)) {
             if (lineID == 0) {
-                header = line;
+                header = std::to_string(readID) + " " + line;
                 ++lineID;
+                ++readID;
             } else if (lineID == 1) {
                 seq = line;
                 ++lineID;
@@ -180,8 +238,9 @@ read_set_t read_fastq_file(std::string file, bool raw, int lower_len, int upper_
     } else {
         while (std::getline(infile, line)) {
             if (lineID == 0) {
-                header = line.substr(0, line.size() - 1);
+                header = std::to_string(readID) + " " +line.substr(0, line.size() - 1);
                 ++lineID;
+                ++readID;
             } else if (lineID == 1) {
                 seq = line.substr(0, line.size() - 1);
                 ++lineID;
@@ -199,6 +258,70 @@ read_set_t read_fastq_file(std::string file, bool raw, int lower_len, int upper_
                     read_t r{header, seq, ann, qt};
                     result.push_back(r);
                 }
+            }
+        }
+    }
+    return result;
+}
+
+read_set_t read_fastq_file(std::string file) {
+    read_set_t result;
+
+    std::ifstream infile(file);
+    std::string line;
+    std::string header;
+    std::string seq;
+    std::string ann;
+    std::string qt;
+    int lineID = 0;
+    bool isLinux = true;
+
+    std::getline(infile, line);
+    if(line[line.size() - 1] == '\r'){
+        isLinux = false;
+        header = line.substr(0, line.size() - 1);
+        ++lineID;
+    } else {
+        header = line;
+        ++lineID;
+    }
+
+    if(isLinux){
+        while (std::getline(infile, line)) {
+            if (lineID == 0) {
+                header = line;
+                ++lineID;
+            } else if (lineID == 1) {
+                seq = line;
+                ++lineID;
+            } else if (lineID == 2) {
+                ann = line;
+                ++lineID;
+            } else if (lineID == 3) {
+                qt = line;
+                lineID = 0;
+
+                read_t r{header, seq, ann, qt};
+                result.push_back(r);
+            }
+        }
+    } else {
+        while (std::getline(infile, line)) {
+            if (lineID == 0) {
+                header = line.substr(0, line.size() - 1);
+                ++lineID;
+            } else if (lineID == 1) {
+                seq = line.substr(0, line.size() - 1);
+                ++lineID;
+            } else if (lineID == 2) {
+                ann = line.substr(0, line.size() - 1);
+                ++lineID;
+            } else if (lineID == 3) {
+                qt = line.substr(0, line.size() - 1);
+                lineID = 0;
+
+                read_t r{header, seq, ann, qt};
+                result.push_back(r);
             }
         }
     }
