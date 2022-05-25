@@ -13,9 +13,11 @@ Reference-free reconstruction and quantification of transcriptomes from long-rea
  * [Quick start](#quick-start)
  * [Running RATTLE](#running-rattle)
    * [Clustering](#clustering)
+     * [Description of clustering parameters](#Description-of-clustering-parameters)
      * [Clustering summary](#clustering-summary)
      * [Cluster extraction](#cluster-extraction)
    * [Error correction](#error-correction)
+     * [Description of error correction parameters](#Description-of-error-correction-parameters)  
    * [Polishing step](#polishing-step)
  * [Example datasets](#example-datasets)
    * [Human direct RNA sequencing](#human-direct-RNA-sequencing)
@@ -279,7 +281,7 @@ This step will generate 3 files:
 * **uncorrected.fq**: contains reads that have been left uncorrected by RATTLE. These will generally be those in clusters with fewer reads than specified with the option `-r`
 * **consensi.fq**: contains one consensus sequence per transcript cluster
 
-### Description of Error correction parameters
+### Description of error correction parameters
 
     -g, --gap-occ (default: 0.3)
 
