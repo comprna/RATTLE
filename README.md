@@ -138,7 +138,7 @@ $ ./rattle cluster -h
 This clustering step will generate a file containing read clusters in binary format (clusters.out). To work with these clusters, the following commands are used.
 
 ### Description of clustering parameters 
-General parameters for the clustering step
+**General parameters for the clustering step**
   
     --raw
 
@@ -152,7 +152,7 @@ By default, we do not use reads that are shorter than 150nt. This limit can be i
 
 Although very long transcripts are possible, we generally found reads longer than 100,000 nt not to be reliable, possibly resulting from experimental artifacts. As data improves, this parameter can be relaxed to identify ultra-long transcripts. 
 
-Parameters related to the bitvector comparison in the Clustering step
+**Parameters related to the bitvector comparison in the Clustering step**
 
     -B, --bv-start-threshold (default: 0.4)
 
@@ -173,6 +173,40 @@ Only clusters with more than this number of reads will be reported and used in t
     -p, --repr-percentile (default: 0.15)
 
 In the iterative algorithm for clustering, reads are tested against representative of a cluster, rather than all the reads from that cluster. The value of -p is the position percentile position of the read in the ranking of reads sorted by length (from longest to shortest) in a cluster that is used as representative. The smaller the value, the closer to the top of the ranking. The longes read in a cluster may seem to be a better representative. However, during RATTLE optimization, we observed that this is not always the case, and using one few positions below (0.15 percentile, i.e. position 15th in a cluster of 100 reads) results in better performance.
+
+**Parameters related to the LIS-based similarity in the Clustering step**
+
+    -k, --kmer-size (default: 10, maximum: 16)
+
+This is the size of k-mer used to compare two reads using the Longest Increasing Subsequence (LIS) algorithm (see RATTLE’s paper for details). A low value will enable a more sensitive comparison but will result in longer computing times. A higher value will make the comparison faster, but may miss cases due to sequencing errors. For reads with low error rate, this can be set to a value higher than the default. The maximum of 16 is used to ensure the efficiency of the algorithmic implementation.
+
+    -s, --score-threshold (default: 0.2)
+
+This parameter sets the minimum score threshold to include a read in a cluster. The similarity score is defined from the Longest Increasing Subsequence (LIS) algorithm as the number of bases covered by co-linearly matching k-mers (defined by –kmer-size) over the length of the shortest read in the pair. The score is calculated between the test read and the representative from the cluster. As any other similarity thresholds, a higher value will be more restrictive and result in more clusters, whereas a lower value would be more permissive and result in fewer clusters.
+
+    -v, --max-variance (default: 1000000)
+
+Two reads could present matching co-linear k-mers (defined by --kmer-size) that have gaps relative to each other. This parameter sets the maximum variance in the distribution of these gap lengths allowed to group two reads into the same gene cluster. It is set to be very large to enable clustering of reads into gene-like structures despite them having large gap differences. This first coarse-grained step can be refined in each gene cluster if the option “--iso” is used (see below). 
+
+**Parameters related to the generation of transcript clusters**
+
+    --iso
+
+When this flag is used, RATTLE will process each gene cluster to determine whether the reads in the cluster can be separated into transcript clusters based on the properties of the co-linear matching k-mers. 
+
+    --iso-kmer-size (default: 11, maximum: 16)
+
+This is the size of k-mer used to compare two reads in the same gene cluster using the Longest Increasing Subsequence (LIS) algorithm to determine whether they should be split into separate transcript clusters. A low value will enable a more sensitive comparison but will result in longer computing times. A higher value will make the comparison faster, but may not be as accurate as separating reads that originate from different transcripts. The maximum of 16 is used to ensure the efficiency of the algorithmic implementation.
+
+    --iso-score-threshold (default: 0.3)
+
+Similar to –score-threshold but for the comparison of reads in the same gene cluster. This parameter sets the minimum score threshold to keep two reads in the same transcript cluster. The similarity score is defined from the Longest Increasing Subsequence (LIS) algorithm as the number of bases covered by co-linearly matching k-mers (defined by –kmer-size) over the length of the shortest read in the pair. The score is calculated between the test read and the representative from the cluster. As any other similarity thresholds, a higher value will be more restrictive and result in more clusters, whereas a lower value would be more permissive and result in fewer clusters.
+
+
+    --iso-max-variance (default: 25)
+
+Two reads belonging to the same gene cluster present matching co-linear k-mers (defined by --kmer-size) that may have gaps relative to each other. This parameter sets the maximum allowed variance in the distribution of these gap lengths. If the variance is above this threshold, the two reads are split into different transcript clusters. As described in RATTLE’s paper, a smaller value enables reconstruction of transcript isoforms that differ by smaller alternative exons. 
+
 
 
 ### Clustering summary
