@@ -139,50 +139,38 @@ This clustering step will generate a file containing read clusters in binary for
 
 ### Description of clustering parameters 
 General parameters for the clustering step
-
-    --rna
-        use this mode if data is direct RNA (disables checking both strands)
-    --verbose
-        use this flag if to print the progress of the run   
+  
     --raw
-        set this flag to use all the reads without any length filtering (off by default)
 
 If this flag is used, all reads from the input are used without any filtering for length, i.e. --lower-length and –upper-length parameters below are not used
 
-    --lower-length
-        filter out reads shorter than this value (default: 150)
+    --lower-length (default: 150)
 
 By default, we do not use reads that are shorter than 150nt. This limit can be increase to produce longer transcript models. Nanopore short-read sequencing is becoming possible, so this lower bound could be lowered to enable the reference-free reconstruction of small non-coding RNAs.
 
-    --upper-length
-        filter out reads longer than this value (default: 100,000)
+    --upper-length (default: 100,000)
 
 Although very long transcripts are possible, we generally found reads longer than 100,000 nt not to be reliable, possibly resulting from experimental artifacts. As data improves, this parameter can be relaxed to identify ultra-long transcripts. 
 
 Parameters related to the bitvector comparison in the Clustering step
 
-    -B, --bv-start-threshold
-        starting threshold for the bitvector k-mer comparison (default: 0.4)
+    -B, --bv-start-threshold (default: 0.4)
 
 This threshold is the minimal bitvector score to consider two reads to be potentially in the same gene cluster. The bitvector score defined as the fraction of unique k-mers that two reads have in common over the maximum of unique k-mers in the two reads. If the score is above this threshold, the two reads are compared using the LIS similarity score (see below –score-threshold). This threshold is the minimal score used. RATTLE performs multiple iterations of this test with all reads starting at the value of “-B” and decreasing by a step of “-f” until the threshold of “-b”. These multiple iterations makes it possible to test all reads under various conditions for clustering. To see the result of changing this parameter, please see Table S11 from RATTLE’s paper.
 
-    -b, --bv-end-threshold
-        ending threshold for the bitvector k-mer comparison (default: 0.2)
+    -b, --bv-end-threshold (default: 0.2)
 
 The ending threshold for the bitvector score in the iterations. A low value for -b makes possible to rescue reads have not been clustered in previous iterations. If -b is close to -B (or the same) only one or few iterations will be performed. This will make the clustering less sensitive, potentially resulting in many unclustered reads. To see the result of changing this parameter, please see Table S11 from RATTLE’s paper.
 
-    -f, --bv-falloff
-        falloff value for the bitvector threshold for each iteration (default: 0.05)
+    -f, --bv-falloff (default: 0.05)
 
 This is the step-change value between the first (-B) and final (-b) bitvector score thresholds and determines the number of iterations to perform clustering. A small value will provide more resolution in the definition of clusters but will result in more iterations, potentially leading to longer computational time. To see the result of changing this parameter, please see Table S11 from RATTLE’s paper.
 
-    -r, --min-reads-cluster
-        minimum number of reads per cluster (default: 0)
+    -r, --min-reads-cluster (default: 0)
 
 Only clusters with more than this number of reads will be reported and used in the next step. The default means that also singletons (clusters composed of 1 single read) are also included.
 
-    -p, --repr-percentile
-        cluster representative percentile (default: 0.15)
+    -p, --repr-percentile (default: 0.15)
 
 In the iterative algorithm for clustering, reads are tested against representative of a cluster, rather than all the reads from that cluster. The value of -p is the position percentile position of the read in the ranking of reads sorted by length (from longest to shortest) in a cluster that is used as representative. The smaller the value, the closer to the top of the ranking. The longes read in a cluster may seem to be a better representative. However, during RATTLE optimization, we observed that this is not always the case, and using one few positions below (0.15 percentile, i.e. position 15th in a cluster of 100 reads) results in better performance.
 
@@ -259,13 +247,11 @@ This step will generate 3 files:
 
 ### Description of Error correction parameters
 
-    -g, --gap-occ
-        gap-occ (default: 0.3)
+    -g, --gap-occ (default: 0.3)
 
 During the error correction step, RATTLE identifies small blocks (<10nt) followed by large gaps (larger than or equal to 20 positions) at both ends of each aligned read and removes them. A block is defined as a subsequence that has gaps occurring at a rate shorter to or equal to gap-occ (default 0.3, i.e. ~3nt in every 9-10 nt). RATTLE keeps removing blocks that satisfy these conditions at both ends of every aligned read until there no more such blocks are found
 
-    -m, --min-occ
-        min-occ (default: 0.3)
+    -m, --min-occ (default: 0.3)
 
 A consensus from each column in the MSA is then extracted in the following way: for each read and each base of the read, the base is changed to the consensus unless this base has an error  if the consensus base occurs with at least 60% frequency, but not if this base has an error probability (obtained from the FASTQ file) less than or equal to 1/3 times the average for the consensus base in that position of the alignment. Indels are treated similarly, but without the error constraint. This is only performed using aligned positions.
 
@@ -291,8 +277,6 @@ $ ./rattle polish -h
 ```
 
 Input must be the consensus sequences from the previous step.
-
-### Description of Polishing parameters
 
 # Example dataset
 
