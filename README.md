@@ -168,12 +168,6 @@ $ ./rattle extract_clusters -h
         min reads per cluster to save it into a file
     --fastq
         whether input and output should be in fastq format (instead of fasta)
-    --raw
-        use this flag if want to use raw datasets
-    --lower-length
-        set the lower length for input reads filter (default: 150)
-    --upper-length
-        set the upper length for input reads filter (default: 100,000)
 
 ```
 
@@ -205,12 +199,6 @@ $ ./rattle correct -h
         number of threads to use (default: 1)
     --verbose
         use this flag to print the progress of the run
-    --raw
-        use this flag if want to use raw datasets
-    --lower-length
-        set the lower length for input reads filter (default: 150)
-    --upper-length
-        set the upper length for input reads filter (default: 100,000)
 
 ```
 
