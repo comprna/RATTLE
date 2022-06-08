@@ -153,19 +153,18 @@ int main(int argc, char *argv[]) {
         std::cerr << gene_clusters.size() << " gene clusters found" << std::endl;
 
         if (!args["iso"]) {
-            // for (auto &c : gene_clusters) {
-            //     auto info = split(reads[c.main_seq.seq_id].header, ' ');
-            //     int seqID = std::stoi(info[0]);
-            //     std::cout << seqID << " " << c.main_seq.seq_id << std::endl;
-            //     c.main_seq.seq_id = seqID;
+            // translate seq_id to original read id
+            for (auto &c : gene_clusters) {
+                int readID = std::stoi(reads[c.main_seq.seq_id].ann);
+                // std::cout << readID << " " << c.main_seq.seq_id << std::endl;
+                c.main_seq.seq_id = readID;
                 
-            //     for (auto &cs : c.seqs) {
-            //         auto info = split(reads[cs.seq_id].header, ' ');
-            //         int seqID = std::stoi(info[0]);
-            //         std::cout << seqID << " " << cs.seq_id << std::endl;
-            //         cs.seq_id = seqID;
-            //     }
-            // }    
+                for (auto &cs : c.seqs) {
+                    readID = std::stoi(reads[cs.seq_id].ann);
+                    // std::cout << readID << " " << cs.seq_id << std::endl;
+                    cs.seq_id = readID;
+                }
+            }    
             hps::to_stream(gene_clusters, out_file);
             out_file.close();
             return EXIT_SUCCESS;
@@ -192,31 +191,30 @@ int main(int argc, char *argv[]) {
 
             // cluster gene reads & save new iso clusters
             auto iso_clusters_tmp = cluster_reads(gene_reads, iso_kmer_size, iso_t_s, iso_t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, false, repr_percentile, is_rna, false, n_threads);
-            for (auto &ic : iso_clusters_tmp) {
-                cluster_t iso_cluster;
-                iso_cluster.main_seq = cseq_t{c.seqs[ic.main_seq.seq_id].seq_id, ic.main_seq.rev};
-
-                for (auto &ics : ic.seqs) {
-                    iso_cluster.seqs.push_back(cseq_t{c.seqs[ics.seq_id].seq_id, ics.rev});
-                }
-
-                iso_clusters.push_back(iso_cluster);
-            }
-
             // for (auto &ic : iso_clusters_tmp) {
             //     cluster_t iso_cluster;
-            //     auto info = split(reads[ic.main_seq.seq_id].header, ' ');
-            //     int seqID = std::stoi(info[0]);
-            //     iso_cluster.main_seq = cseq_t{seqID, ic.main_seq.rev};
+            //     iso_cluster.main_seq = cseq_t{c.seqs[ic.main_seq.seq_id].seq_id, ic.main_seq.rev};
 
             //     for (auto &ics : ic.seqs) {
-            //         auto info = split(reads[ics.seq_id].header, ' ');
-            //         int seqID = std::stoi(info[0]);
             //         iso_cluster.seqs.push_back(cseq_t{c.seqs[ics.seq_id].seq_id, ics.rev});
             //     }
 
             //     iso_clusters.push_back(iso_cluster);
             // }
+
+            for (auto &ic : iso_clusters_tmp) {
+                cluster_t iso_cluster;
+                // translate seq_id to original read id
+                int readID = std::stoi(reads[c.seqs[ic.main_seq.seq_id].seq_id].ann);
+                iso_cluster.main_seq = cseq_t{readID, ic.main_seq.rev};
+
+                for (auto &ics : ic.seqs) {
+                    readID = std::stoi(reads[c.seqs[ics.seq_id].seq_id].ann);
+                    iso_cluster.seqs.push_back(cseq_t{readID, ics.rev});
+                }
+
+                iso_clusters.push_back(iso_cluster);
+            }
 
             ++i;
             if (verbose) print_progress(i, gene_clusters.size());
@@ -295,7 +293,7 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        sort_read_set(reads);
+        // sort_read_set(reads);
         std::cerr << "Done" << std::endl;
 
         int n_threads = args["threads"].as<int>(1);
@@ -370,7 +368,7 @@ int main(int argc, char *argv[]) {
             }
         }
 
-        sort_read_set(reads);
+        // sort_read_set(reads);
         std::cerr << "Done" << std::endl;
 
         std::ifstream in_file(args["clusters"].as<std::string>(), std::ifstream::binary);
@@ -438,7 +436,7 @@ int main(int argc, char *argv[]) {
             reads = read_fasta_file(args["input"]);
         }
 
-        sort_read_set(reads);
+        // sort_read_set(reads);
         std::cerr << "Done" << std::endl;
 
         std::ifstream in_file(args["clusters"].as<std::string>(), std::ifstream::binary);
@@ -527,7 +525,7 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
         
-        read_set_t reads = read_fastq_file(args["input"], true, 150, 100000);
+        read_set_t reads = read_fastq_file(args["input"]);
 
         sort_read_set(reads);
         std::cerr << "Done" << std::endl;

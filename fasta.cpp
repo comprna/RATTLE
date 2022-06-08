@@ -30,25 +30,23 @@ std::string unzip_file(std::string filename, int index){
     return filename;
 }
 
+// Clustering step read_fasta_file function
 read_set_t read_fasta_file(std::string file, bool raw, int lower_len, int upper_len) {
     read_set_t result;
 
     std::ifstream infile(file);
     std::string line;
     std::string header;
-    std::string seq;
+    std::string seq;            // No qt, ann is used for storing readID
     bool isLinux = true;
     int readID = 0;
 
-    // Setting the FASTA format quality value to the maximum value '~' for correction and polish step
     std::getline(infile, line);
     if(char (line[line.size() - 1]) == '\r'){
         isLinux = false;
-        header = std::to_string(readID) + " " + line.substr(0, line.size() - 1);
-        ++readID;
+        header = line.substr(0, line.size() - 1);
     } else {
-        header = std::to_string(readID) + " " + line;
-        ++readID;
+        header = line;
     }
 
     if(isLinux){
@@ -59,17 +57,18 @@ read_set_t read_fasta_file(std::string file, bool raw, int lower_len, int upper_
                 if (!header.empty()) {
                     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
                     if(raw){
-                        read_t r{header, seq, "", ""};
+                        read_t r{header, seq, std::to_string(readID), ""};
+                        ++readID;
                         result.push_back(r);
                     } else if( seq.length() >= lower_len && seq.length() <= upper_len){
-                        read_t r{header, seq, "", ""};
+                        read_t r{header, seq, std::to_string(readID), ""};
+                        ++readID;
                         result.push_back(r);
                     } 
                 }
 
                 seq = "";
-                header = std::to_string(readID) + " " + line;
-                ++readID;
+                header = line;
             } else {
                 seq += line;
             }
@@ -82,17 +81,18 @@ read_set_t read_fasta_file(std::string file, bool raw, int lower_len, int upper_
                 if (!header.empty()) {
                     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
                     if(raw){
-                        read_t r{header, seq, "", ""};
+                        read_t r{header, seq, std::to_string(readID), ""};
+                        ++readID;
                         result.push_back(r);
                     } else if( seq.length() >= lower_len && seq.length() <= upper_len){
-                        read_t r{header, seq, "", ""};
+                        read_t r{header, seq, std::to_string(readID), ""};
+                        ++readID;
                         result.push_back(r);
                     } 
                 }
 
                 seq = "";
-                header = std::to_string(readID) + " " + line.substr(0, line.size() - 1);
-                ++readID;
+                header = line.substr(0, line.size() - 1);
             } else {
                 seq += line.substr(0, line.size() - 1);
             }
@@ -101,10 +101,12 @@ read_set_t read_fasta_file(std::string file, bool raw, int lower_len, int upper_
 
     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
     if(raw){
-        read_t r{header, seq, "", ""};
+        read_t r{header, seq, std::to_string(readID), ""};
+        ++readID;
         result.push_back(r);
     } else if( seq.length() >= lower_len && seq.length() <= upper_len){
-        read_t r{header, seq, "", ""};
+        read_t r{header, seq, std::to_string(readID), ""};
+        ++readID;
         result.push_back(r);
     } 
     
@@ -140,7 +142,7 @@ read_set_t read_fasta_file(std::string file) {
                     for(int i = 0; i < seq.size(); i++){
                         qt += '~';
                     }
-                    read_t r{header, seq, "", qt};
+                    read_t r{header, seq, "+", qt};
                     result.push_back(r);
                     qt = "";
                 }
@@ -161,7 +163,7 @@ read_set_t read_fasta_file(std::string file) {
                     for(int i = 0; i < seq.size(); i++){
                         qt += '~';
                     }
-                    read_t r{header, seq, "", qt};
+                    read_t r{header, seq, "+", qt};
                     result.push_back(r);
                     qt = "";
                 }
@@ -178,13 +180,14 @@ read_set_t read_fasta_file(std::string file) {
     for(int i = 0; i < seq.size(); i++){
         qt += '~';
     }
-    read_t r{header, seq, "", qt};
+    read_t r{header, seq, "+", qt};
     result.push_back(r);
     qt = "";
     
     return result;
 }
 
+// Clustering step read_fastq_file function
 read_set_t read_fastq_file(std::string file, bool raw, int lower_len, int upper_len) {
     read_set_t result;
 
@@ -192,8 +195,8 @@ read_set_t read_fastq_file(std::string file, bool raw, int lower_len, int upper_
     std::string line;
     std::string header;
     std::string seq;
-    std::string ann;
-    std::string qt;
+    std::string ann;                // ann is used to save readID in clustering step
+    // std::string qt;              // Not storing qt to save memory space
     int lineID = 0;
     int readID = 0;
     bool isLinux = true;
@@ -201,61 +204,65 @@ read_set_t read_fastq_file(std::string file, bool raw, int lower_len, int upper_
     std::getline(infile, line);
     if(line[line.size() - 1] == '\r'){
         isLinux = false;
-        header = std::to_string(readID) + " " + line.substr(0, line.size() - 1);
+        header = line.substr(0, line.size() - 1);
         ++lineID;
-        ++readID;
     } else {
-        header = std::to_string(readID) + " " + line;
+        header = line;
         ++lineID;
-        ++readID;
     }
 
     if(isLinux){
         while (std::getline(infile, line)) {
             if (lineID == 0) {
-                header = std::to_string(readID) + " " + line;
+                header = line;
                 ++lineID;
-                ++readID;
             } else if (lineID == 1) {
                 seq = line;
                 ++lineID;
             } else if (lineID == 2) {
-                ann = line;
+                ann = std::to_string(readID);
+                ++readID;
                 ++lineID;
             } else if (lineID == 3) {
-                qt = line;
+                // qt = "";
                 lineID = 0;
 
                 if(raw){
-                    read_t r{header, seq, ann, qt};
+                    // read_t r{header, seq, ann, qt};
+                    read_t r{header, seq, ann, ""};
                     result.push_back(r);
                 } else if( seq.length() >= lower_len && seq.length() <= upper_len){
-                    read_t r{header, seq, ann, qt};
+                    // read_t r{header, seq, ann, qt};
+                    read_t r{header, seq, ann, ""};
                     result.push_back(r);
+                }  else {
+                    // std::cout << header << " " << seq.length() << std::endl;
                 }
             }
         }
     } else {
         while (std::getline(infile, line)) {
             if (lineID == 0) {
-                header = std::to_string(readID) + " " +line.substr(0, line.size() - 1);
+                header = line.substr(0, line.size() - 1);
                 ++lineID;
-                ++readID;
             } else if (lineID == 1) {
                 seq = line.substr(0, line.size() - 1);
                 ++lineID;
             } else if (lineID == 2) {
-                ann = line.substr(0, line.size() - 1);
+                ann = std::to_string(readID);
+                ++readID;
                 ++lineID;
             } else if (lineID == 3) {
-                qt = line.substr(0, line.size() - 1);
+                // qt = "";
                 lineID = 0;
 
                 if(raw){
-                    read_t r{header, seq, ann, qt};
+                    // read_t r{header, seq, ann, qt};
+                    read_t r{header, seq, ann, ""};
                     result.push_back(r);
                 } else if( seq.length() >= lower_len && seq.length() <= upper_len){
-                    read_t r{header, seq, ann, qt};
+                    // read_t r{header, seq, ann, qt};
+                    read_t r{header, seq, ann, ""};
                     result.push_back(r);
                 }
             }
