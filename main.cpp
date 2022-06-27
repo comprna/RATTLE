@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
         try {
            reads = read_multiple_inputs(files, labels, raw, lower_len, upper_len);
         }
-        catch (char* c) {
+        catch (const char* c) {
             std::cerr << c;
             return EXIT_FAILURE;
         }
@@ -323,7 +323,7 @@ int main(int argc, char *argv[]) {
         try {
            reads = read_multiple_inputs(files, labels, raw, lower_len, upper_len);
         }
-        catch (char* c) {
+        catch (const char* c) {
             std::cerr << c;
             return EXIT_FAILURE;
         }
@@ -404,7 +404,7 @@ int main(int argc, char *argv[]) {
         try {
            reads = read_multiple_inputs(files, labels, raw, lower_len, upper_len);
         }
-        catch (char* c) {
+        catch (const char* c) {
             std::cerr << c;
             return EXIT_FAILURE;
         }
@@ -485,7 +485,7 @@ int main(int argc, char *argv[]) {
         try {
            reads = read_multiple_inputs(files, labels, raw, lower_len, upper_len);
         }
-        catch (char* c) {
+        catch (const char* c) {
             std::cerr << c;
             return EXIT_FAILURE;
         }
