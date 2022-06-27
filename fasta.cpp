@@ -58,13 +58,12 @@ read_set_t read_fasta_file(std::string file, bool raw, int lower_len, int upper_
                     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
                     if(raw){
                         read_t r{header, seq, std::to_string(readID), ""};
-                        ++readID;
                         result.push_back(r);
                     } else if( seq.length() >= lower_len && seq.length() <= upper_len){
                         read_t r{header, seq, std::to_string(readID), ""};
-                        ++readID;
                         result.push_back(r);
                     } 
+                    ++readID;
                 }
 
                 seq = "";
@@ -82,13 +81,12 @@ read_set_t read_fasta_file(std::string file, bool raw, int lower_len, int upper_
                     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
                     if(raw){
                         read_t r{header, seq, std::to_string(readID), ""};
-                        ++readID;
                         result.push_back(r);
                     } else if( seq.length() >= lower_len && seq.length() <= upper_len){
                         read_t r{header, seq, std::to_string(readID), ""};
-                        ++readID;
                         result.push_back(r);
                     } 
+                    ++readID;
                 }
 
                 seq = "";
@@ -102,13 +100,12 @@ read_set_t read_fasta_file(std::string file, bool raw, int lower_len, int upper_
     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
     if(raw){
         read_t r{header, seq, std::to_string(readID), ""};
-        ++readID;
         result.push_back(r);
     } else if( seq.length() >= lower_len && seq.length() <= upper_len){
         read_t r{header, seq, std::to_string(readID), ""};
-        ++readID;
         result.push_back(r);
     } 
+    ++readID;
     
     return result;
 }
