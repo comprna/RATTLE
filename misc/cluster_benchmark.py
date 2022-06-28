@@ -26,7 +26,7 @@ print("RATTLE cluster summary completed")
 filename = args.output + "/summary.tsv"
 csv_reader = csv.reader(open(filename))
 tsp = {}
-with open('./toyset/cluster_benchmark/input/sample_ref.fa', 'r') as f:
+with open('./toyset/cluster_benchmark/input/ref.fa', 'r') as f:
     for count, line in enumerate(f, start=1):
         if count % 2 == 1:
             l = line.split()
