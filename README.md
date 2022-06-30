@@ -24,6 +24,7 @@ Reference-free reconstruction and quantification of transcriptomes from long-rea
  * [Reference based benchmarking](#reference-based-benchmarking)
    * [ssCheck](#sscheck)
    * [Example dataset](#example-dataset)
+   * [Cluster benchmark](#cluster-benchmark)
  * [Snakemake](#Snakemake)
 # Requirements
 GCC, G++ with C++14 suppport
@@ -427,14 +428,52 @@ Total introns in reads: 15323
 --> Novel: 5202 (33.95%)
 ```
 
+## Cluster benchmark
+We describe here the tool **cluster_benchmark** for cluster accuracy of predicted reads cluster label compared with reads mapped transciptome id. 
+
+```
+python cluster_benchmark.py [input] [output folder] [threads] [--rna]
+
+positional arguments:
+[input]  input fasta fie (required)
+[output] output folder (required)
+
+optional arguments:
+threads  number of threads to run RATTLE
+--rna    use this mode if data is direct RNA
+```
+Cluster_benchmark is designed to calculate the cluster accuracy scores (homogeneity, completeness) of the result from RATTLE clustering step. 
+
+**example**  
+We provide below example dataset and cluster_banchmark.py commands. We make available all input and output files under the folder ./toyset/cluster_benchmark. The inputs (sample.fa) are based on the same dataset described above for the RATTLE toyset with mapped transcriptome id label. And input (ref.fa) is a subset of the reference dataset downloaded from http://ftp.ensembl.org/pub/release-105/fasta/homo_sapiens/. This input files are available at ./toyset/cluster_benchmark/input. We describe below the steps to run cluster benchmark.
+
+**label the sample reads**  
+We use minimap to label the sample reads with human transcriptome id. 
+
+```
+./minimap2 -ax map-ont --secondary=no ./toyset/cluster_benchmark/input/ref.fa ./toyset/rna/input/sample.fastq > ./toyset/cluster_benchmark/input/sample.sam
+```
+Then convert the sam file into a fasta file (sample.fa). The ref.fa and converted sample.fa file are both available at /toyset/cluster_benchmark/input folder. 
+
+**cluster accuracy benchmark**  
+We run the cluster_benchmark.py to benchmark the accuracy scores. The python file would automatically execute the RATTLE cluster and cluster summary step. Then use the summary tsv/csv file to calculate the accuracy score. 
+```
+python ./misc/cluster_benchmark.py ./toyset/cluster_benchmark/input/sample.fa ./toyset/cluster_benchmark/output 24 --rna
+```
+
+**result**
+This cluster accuracy benchmark result is generated from RATTLE v1.0.
+| mode - reference    | homogeneity   | completeness   |
+| :----------------|:-------------:| :-------------|
+| rna - transcriptome  | 84.56%    |92.22%     |
+| rna - genome  |  99.51%    |90.08%         |
+| dna - transcriptome  | 84.52%   |92.21%     |
+| dna - genome  |  99.47%    |90.07%         |
+
 # Snakemake
 
 Below we show how the user can run all steps in one go using Snakemake. We show this using the toy dataset as example. 
 This can be adapted to any other dataset.
 ```
 snakemake -s rattle_snakefile -p toyset/rna/snakemake_output/transcriptome.fq --cores 1
-
 ```
-
-
-
