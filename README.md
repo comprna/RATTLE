@@ -461,7 +461,7 @@ We run the cluster_benchmark.py to benchmark the accuracy scores. The python fil
 python ./misc/cluster_benchmark.py ./toyset/cluster_benchmark/input/sample.fa ./toyset/cluster_benchmark/output 24 --rna
 ```
 
-**result**
+**result**  
 This cluster accuracy benchmark result is generated from RATTLE v1.0.
 | mode - reference    | homogeneity   | completeness   |
 | :----------------|:-------------:| :-------------|
