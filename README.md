@@ -55,7 +55,7 @@ $ ./rattle cluster -i reads.fq -t 24 -o .
 
 * Cluster cDNA Nanopore reads with labels at gene level with 24 threads
 ```
-$ ./rattle cluster -i reads.fq -l L1 -t 24 -o . 
+$ ./rattle cluster -i reads.fq -t 24 -o . 
 ```
 
 * Cluster cDNA Nanopore reads at isoform level with 24 threads
@@ -230,6 +230,12 @@ $ ./rattle cluster_summary -h
         labels for the files in order of entry (optional)
     -c, --clusters
         clusters file. This is the output file from clustering step (required)
+    --raw
+        set this flag to use all the reads without any length filtering (off by default)
+    --lower-length
+        filter out reads shorter than this value (default: 150)
+    --upper-length
+        filter out reads longer than this value (default: 100,000)
 ```
 
 This command will output a CSV file to stdout containing two columns:
@@ -254,6 +260,12 @@ $ ./rattle extract_clusters -h
         min reads per cluster to save it into a file
     --fastq
         whether input and output should be in fastq format (instead of fasta)
+    --raw
+        set this flag to use all the reads without any length filtering (off by default)
+    --lower-length
+        filter out reads shorter than this value (default: 150)
+    --upper-length
+        filter out reads longer than this value (default: 100,000)
 
 ```
 
@@ -287,6 +299,12 @@ $ ./rattle correct -h
         number of threads to use (default: 1)
     --verbose
         use this flag to print the progress of the run
+    --raw
+        set this flag to use all the reads without any length filtering (off by default)
+    --lower-length
+        filter out reads shorter than this value (default: 150)
+    --upper-length
+        filter out reads longer than this value (default: 100,000)
 
 ```
 
@@ -340,32 +358,32 @@ We provide here as an example the analysis of a direct RNA sequencing dataset of
 
 **cluster**
 ```
-$ ./rattle cluster -i ./toyset/rna/input/sample.fastq,./toyset/rna/input/sample.fastq -l C1,T1 -t 24 -o ./toyset/rna/output --rna
+$ ./rattle cluster -i ./toyset/rna/input/sample.fastq -t 24 -o ./toyset/rna/output --rna
 ```
 The output file generated from this step is clusters.out at ./toyset/rna/output/
 
 **cluster_summary**
 ```
-$ ./rattle cluster_summary -i ./toyset/rna/input/sample.fastq,./toyset/rna/input/sample.fastq -l C1,T1 -c ./toyset/rna/output/clusters.out > ./toyset/rna/output/cluster_summary.tsv
+$ ./rattle cluster_summary -i ./toyset/rna/input/sample.fastq -c ./toyset/rna/output/clusters.out > ./toyset/rna/output/cluster_summary.tsv
 ```
 The output generated from this step is a tsv file on the standard output which can be redirected to a file, for example ./toyset/rna/output/cluster_summary.tsv
 
 **extract_clusters**
 ```
 mkdir ./toyset/rna/output/clusters
-$  ./rattle extract_clusters -i ./toyset/rna/input/sample.fastq,./toyset/rna/input/sample.fastq -l C1,T1 -c ./toyset/rna/output/clusters.out -o ./toyset/rna/output/clusters --fastq
+$  ./rattle extract_clusters -i ./toyset/rna/input/sample.fastq -c ./toyset/rna/output/clusters.out -o ./toyset/rna/output/clusters --fastq
 ```
 The output generated from this step is a clusters folder with 1 fastq file per cluster, for example ./toyset/rna/output/clusters
 
 **correct**
 ```
-$  ./rattle correct -i ./toyset/rna/input/sample.fastq,./toyset/rna/input/sample.fastq -l C1,T1 -c ./toyset/rna/output/clusters.out -o ./toyset/rna/output/ -t 24
+$  ./rattle correct -i ./toyset/rna/input/sample.fastq -c ./toyset/rna/output/clusters.out -o ./toyset/rna/output/ -t 24
 ```
 The output generated from this step are three files uncorrected.fq, corrected.fq and consensi.fq at ./toyset/rna/output/
 
 **polish**
 ```
-$  ./rattle polish -i ./toyset/rna/output/consensi.fq -l C1,T1 -o ./toyset/rna/output/ -t 24 --rna
+$  ./rattle polish -i ./toyset/rna/output/consensi.fq -o ./toyset/rna/output/ -t 24 --rna
 ```
 The output generated from this step is the transcriptome.fq at ./toyset/rna/output/
 
