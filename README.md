@@ -38,7 +38,6 @@ git clone --recurse-submodules https://github.com/comprna/RATTLE
 * Build RATTLE
 ```
 cd RATTLE
-git checkout label
 ./build.sh
 ```
 (this will generally take less than 1 minute)
