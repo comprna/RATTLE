@@ -30,7 +30,169 @@ std::string unzip_file(std::string filename, int index){
     return filename;
 }
 
-// Clustering step read_fasta_file function
+read_set_t read_fasta_file(std::string file, std::string sample_id, bool raw, int lower_len, int upper_len) {
+    read_set_t result;
+
+    std::ifstream infile(file);
+    std::string line;
+    std::string header;
+    std::string seq;
+    std::string qt = "";
+    bool isLinux = true;
+
+    std::getline(infile, line);
+    if(char (line[line.size() - 1]) == '\r'){
+        isLinux = false;
+        header = line.substr(0, line.size() - 1) + sample_id;
+    } else {
+        header = line + sample_id;
+    }
+
+    if(isLinux){
+        while (std::getline(infile, line)) {
+            if (line.size() == 0) continue;
+
+            if (line[0] == '>') {
+                if (!header.empty()) {
+                    std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
+                    if(raw){
+                        for(int i = 0; i < seq.size(); i++){
+                            qt += '~';
+                        }
+                        read_t r{header, seq, "", qt};
+                        result.push_back(r);
+                        qt = "";
+                    } else if( seq.length() >= lower_len && seq.length() <= upper_len){
+                        for(int i = 0; i < seq.size(); i++){
+                            qt += '~';
+                        }
+                        read_t r{header, seq, "", qt};
+                        result.push_back(r);
+                        qt = "";
+                    } 
+                }
+
+                seq = "";
+                header = line + sample_id;
+            } else {
+                seq += line;
+            }
+        }
+    } else {
+        while (std::getline(infile, line)) {
+            if (line.size() == 0) continue;
+
+            if (line[0] == '>') {
+                if (!header.empty()) {
+                    std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
+                    if(raw){
+                        for(int i = 0; i < seq.size(); i++){
+                            qt += '~';
+                        }
+                        read_t r{header, seq, "", qt};
+                        result.push_back(r);
+                        qt = "";
+                    } else if( seq.length() >= lower_len && seq.length() <= upper_len){
+                        for(int i = 0; i < seq.size(); i++){
+                            qt += '~';
+                        }
+                        read_t r{header, seq, "", qt};
+                        result.push_back(r);
+                        qt = "";
+                    } 
+                }
+
+                seq = "";
+                header = line.substr(0, line.size() - 1) + sample_id;
+            } else {
+                seq += line.substr(0, line.size() - 1);
+            }
+         }     
+    }
+
+    std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
+    if (!header.empty() && seq.length() >= 150 && seq.length() <= 1000000) {
+        read_t r{header, seq, "", ""};
+        result.push_back(r);
+    }
+
+    return result;
+}
+
+read_set_t read_fastq_file(std::string file, std::string sample_id, bool raw, int lower_len, int upper_len) {
+    read_set_t result;
+
+    std::ifstream infile(file);
+    std::string line;
+    std::string header;
+    std::string seq;
+    std::string ann;
+    std::string qt;
+    int lineID = 0;
+    bool isLinux = true;
+
+    std::getline(infile, line);
+    if(line[line.size() - 1] == '\r'){
+        isLinux = false;
+        header = line.substr(0, line.size() - 1) + sample_id;
+        lineID++;
+    } else {
+        header = line + sample_id;
+        lineID++;
+    }
+
+    if(isLinux){
+        while (std::getline(infile, line)) {
+            if (lineID == 0) {
+                header = line + sample_id;
+                ++lineID;
+            } else if (lineID == 1) {
+                seq = line;
+                ++lineID;
+            } else if (lineID == 2) {
+                ann = line;
+                ++lineID;
+            } else if (lineID == 3) {
+                qt = line;
+                lineID = 0;
+
+                if(raw){
+                    read_t r{header, seq, ann, qt};
+                    result.push_back(r);
+                } else if( seq.length() >= lower_len && seq.length() <= upper_len){
+                    read_t r{header, seq, ann, qt};
+                    result.push_back(r);
+                }
+            }
+        }
+    } else {
+        while (std::getline(infile, line)) {
+            if (lineID == 0) {
+                header = line.substr(0, line.size() - 1) + sample_id;
+                ++lineID;
+            } else if (lineID == 1) {
+                seq = line.substr(0, line.size() - 1);
+                ++lineID;
+            } else if (lineID == 2) {
+                ann = line.substr(0, line.size() - 1);
+                ++lineID;
+            } else if (lineID == 3) {
+                qt = line.substr(0, line.size() - 1);
+                lineID = 0;
+
+                if(raw){
+                    read_t r{header, seq, ann, qt};
+                    result.push_back(r);
+                } else if( seq.length() >= lower_len && seq.length() <= upper_len){
+                    read_t r{header, seq, ann, qt};
+                    result.push_back(r);
+                }
+            }
+        }
+    }
+    return result;
+}
+
 read_set_t read_fasta_file(std::string file, bool raw, int lower_len, int upper_len) {
     read_set_t result;
 

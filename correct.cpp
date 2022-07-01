@@ -296,7 +296,7 @@ corrected_pack_t correct_read_pack(const read_set_t &reads, const msa_t &aln, do
     return corrected_pack_t{-1, consensus, corrected_reads, uncorrected_reads};
 }
 
-correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &reads, double min_occ, double gap_occ, double err_ratio, int split, int min_reads, int n_threads, bool verbose) {
+correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &reads, double min_occ, double gap_occ, double err_ratio, int split, int min_reads, int n_threads, bool verbose, std::vector<std::string> labels) {
     std::queue<pack_to_correct_t> pending_clusters;
     int corrected = 0;
     int total_reads = 0;
@@ -348,7 +348,7 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
 
     int nf = 0;
     for (int t = 0; t < n_threads; ++t) {
-        tasks.emplace_back(std::async(std::launch::async, [&nf, t, &consensi, &corrected_read_set, &uncorrected_read_set, &consensus_set, &pending_clusters, &mu, &corrected, &total_reads, gap_occ, min_occ, n_threads, &verbose] {
+        tasks.emplace_back(std::async(std::launch::async, [&nf, t, &consensi, &corrected_read_set, &uncorrected_read_set, &consensus_set, &pending_clusters, &mu, &corrected, &total_reads, gap_occ, min_occ, n_threads, &verbose, &labels] {
             // TODO: check this loop
             while (true) {
                 pack_to_correct_t pack;
@@ -476,7 +476,19 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
                     std::lock_guard<std::mutex> lock(mu);
                     
                     // save in consensus header the number of reads of this cluster
-                    consensi[pack.original_cluster_id].push_back(read_t{std::to_string(creads.size()), consensus, "+", std::string(consensus.size(), 'K')});
+                    // add file labels & labels counts to consensi header 
+                    std::vector<std::string> labelset;               
+                    for(auto r: creads){
+                        int index = r.header.find_last_of(",");
+                        std::string label = r.header.substr(index + 1);
+                        labelset.push_back(label);
+                    }
+
+                    std::string label_result;
+                    for(auto label: labels){
+                        label_result = label_result + " " + label + ":" + std::to_string(count(labelset.begin(), labelset.end(), label));
+                    }
+                    consensi[pack.original_cluster_id].push_back(read_t{std::to_string(creads.size()) + "," + label_result, consensus, "+", std::string(consensus.size(), 'K')});
 
                     // // sort corrected cluster
                     // std::stable_sort(corrected_reads.begin(), corrected_reads.end(), [](read_t a, read_t b) {
@@ -498,9 +510,30 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
     cid = 0;
     for (auto& it: consensi) {
         int total_reads = 0;
+        std::vector<int> label_counts(labels.size());
+        std::string labels_result="";
 
         for (const auto& rit: it) {
-            total_reads += std::stoi(rit.header);
+            int index = rit.header.find_first_of(",");
+            total_reads += std::stoi(rit.header.substr(0, index));
+
+            int  i = 0;
+            for(auto label: labels){
+                if(rit.header.find(label) != std::string::npos){
+                    index = rit.header.find(label);
+                    std::string sub = rit.header.substr(index + 1);
+                    index = sub.find_first_of(":");
+                    // std::cout << label << "  " << sub.substr(index + 1) << "  " << std::stoi(sub.substr(index + 1)) << std::endl;
+                    label_counts[i] += std::stoi(sub.substr(index + 1));
+                }
+                ++i;
+            }
+        }
+
+        int  i = 0;
+        for(auto label: labels){
+            labels_result += label + ":" + std::to_string(label_counts[i]) + ",";
+            ++i;
         }
 
         if (it.size() > 1) {
@@ -535,10 +568,10 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
             cv.consensus_nt.erase(std::remove(cv.consensus_nt.begin(), cv.consensus_nt.end(), '-'), cv.consensus_nt.end());
             std::string consensus(cv.consensus_nt.begin(), cv.consensus_nt.end());
 
-            consensus_set.push_back(read_t{"@cluster_" + std::to_string(cid) + " reads=" + std::to_string(total_reads), consensus, "+", std::string(consensus.size(), 'K')});
+            consensus_set.push_back(read_t{"@cluster_" + std::to_string(cid) + " reads=" + std::to_string(total_reads) + " labels=" + labels_result, consensus, "+", std::string(consensus.size(), 'K')});
         } else {
             if (it.size() > 0) {
-                consensus_set.push_back(read_t{"@cluster_" + std::to_string(cid) + " reads=" + std::to_string(total_reads), it[0].seq, "+", it[0].quality});
+                consensus_set.push_back(read_t{"@cluster_" + std::to_string(cid) + " reads=" + std::to_string(total_reads) + " labels=" + labels_result, it[0].seq, "+", it[0].quality});
             }
         }
 

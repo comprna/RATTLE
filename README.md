@@ -38,6 +38,7 @@ git clone --recurse-submodules https://github.com/comprna/RATTLE
 * Build RATTLE
 ```
 cd RATTLE
+git checkout label
 ./build.sh
 ```
 (this will generally take less than 1 minute)
@@ -51,6 +52,11 @@ We provide here some of the most common commands used when running RATTLE.
 * Cluster cDNA Nanopore reads at gene level with 24 threads
 ```
 $ ./rattle cluster -i reads.fq -t 24 -o . 
+```
+
+* Cluster cDNA Nanopore reads with labels at gene level with 24 threads
+```
+$ ./rattle cluster -i reads.fq -l L1 -t 24 -o . 
 ```
 
 * Cluster cDNA Nanopore reads at isoform level with 24 threads
@@ -98,6 +104,8 @@ $ ./rattle cluster -h
         shows this help message
     -i, --input
         input fasta/fastq file or compressed with .gz extension, will automatically check file extension (required)
+    -l, --label
+        labels for the files in order of entry (optional)
     -o, --output
         output folder (default: .)
     -t, --threads
@@ -219,6 +227,8 @@ $ ./rattle cluster_summary -h
         shows this help message
     -i, --input
         input fasta/fastq file (required)
+    -l, --label
+        labels for the files in order of entry (optional)
     -c, --clusters
         clusters file. This is the output file from clustering step (required)
 ```
@@ -235,6 +245,8 @@ $ ./rattle extract_clusters -h
         shows this help message
     -i, --input
         input fasta/fastq file (required)
+    -l, --label
+        labels for the files in order of entry (optional)
     -c, --clusters
         clusters file. This is the output file from clustering step (required)
     -o, --output-folder
@@ -258,6 +270,8 @@ $ ./rattle correct -h
         shows this help message
     -i, --input
         input fasta/fastq file (required)
+    -l, --label
+        labels for the files in order of entry (optional)
     -c, --clusters
         clusters file. This is the output file from clustering step (required)
     -o, --output
@@ -305,6 +319,8 @@ $ ./rattle polish -h
         input RATTLE consensi fasta/fastq file (required)
     -o, --output-folder
         output folder for fastx files (default: .)
+    -l, --label
+        labels for the files. if used, must be same as previous steps (optional)
     -t, --threads
         number of threads to use (default: 1)
     --rna
@@ -325,32 +341,32 @@ We provide here as an example the analysis of a direct RNA sequencing dataset of
 
 **cluster**
 ```
-$ ./rattle cluster -i ./toyset/rna/input/sample.fastq -t 24 -o ./toyset/rna/output --rna
+$ ./rattle cluster -i ./toyset/rna/input/sample.fastq,./toyset/rna/input/sample.fastq -l C1,T1 -t 24 -o ./toyset/rna/output --rna
 ```
 The output file generated from this step is clusters.out at ./toyset/rna/output/
 
 **cluster_summary**
 ```
-$ ./rattle cluster_summary -i ./toyset/rna/input/sample.fastq -c ./toyset/rna/output/clusters.out > ./toyset/rna/output/cluster_summary.tsv
+$ ./rattle cluster_summary -i ./toyset/rna/input/sample.fastq,./toyset/rna/input/sample.fastq -l C1,T1 -c ./toyset/rna/output/clusters.out > ./toyset/rna/output/cluster_summary.tsv
 ```
 The output generated from this step is a tsv file on the standard output which can be redirected to a file, for example ./toyset/rna/output/cluster_summary.tsv
 
 **extract_clusters**
 ```
 mkdir ./toyset/rna/output/clusters
-$  ./rattle extract_clusters -i ./toyset/rna/input/sample.fastq -c ./toyset/rna/output/clusters.out -o ./toyset/rna/output/clusters --fastq 
+$  ./rattle extract_clusters -i ./toyset/rna/input/sample.fastq,./toyset/rna/input/sample.fastq -l C1,T1 -c ./toyset/rna/output/clusters.out -o ./toyset/rna/output/clusters --fastq
 ```
 The output generated from this step is a clusters folder with 1 fastq file per cluster, for example ./toyset/rna/output/clusters
 
 **correct**
 ```
-$  ./rattle correct -i ./toyset/rna/input/sample.fastq -c ./toyset/rna/output/clusters.out -o ./toyset/rna/output/ -t 24
+$  ./rattle correct -i ./toyset/rna/input/sample.fastq,./toyset/rna/input/sample.fastq -l C1,T1 -c ./toyset/rna/output/clusters.out -o ./toyset/rna/output/ -t 24
 ```
 The output generated from this step are three files uncorrected.fq, corrected.fq and consensi.fq at ./toyset/rna/output/
 
 **polish**
 ```
-$  ./rattle polish -i ./toyset/rna/output/consensi.fq -o ./toyset/rna/output/  -t 24 --rna
+$  ./rattle polish -i ./toyset/rna/output/consensi.fq -l C1,T1 -o ./toyset/rna/output/ -t 24 --rna
 ```
 The output generated from this step is the transcriptome.fq at ./toyset/rna/output/
 
