@@ -230,12 +230,6 @@ $ ./rattle cluster_summary -h
         labels for the files in order of entry (optional)
     -c, --clusters
         clusters file. This is the output file from clustering step (required)
-    --raw
-        set this flag to use all the reads without any length filtering (off by default)
-    --lower-length
-        filter out reads shorter than this value (default: 150)
-    --upper-length
-        filter out reads longer than this value (default: 100,000)
 ```
 
 This command will output a CSV file to stdout containing two columns:
@@ -260,13 +254,6 @@ $ ./rattle extract_clusters -h
         min reads per cluster to save it into a file
     --fastq
         whether input and output should be in fastq format (instead of fasta)
-    --raw
-        set this flag to use all the reads without any length filtering (off by default)
-    --lower-length
-        filter out reads shorter than this value (default: 150)
-    --upper-length
-        filter out reads longer than this value (default: 100,000)
-
 ```
 
 This command will generate 1 fastq/fasta file per cluster in the specified folder. This is useful to analyze particular clusters, perform alignments, etc.
@@ -299,13 +286,6 @@ $ ./rattle correct -h
         number of threads to use (default: 1)
     --verbose
         use this flag to print the progress of the run
-    --raw
-        set this flag to use all the reads without any length filtering (off by default)
-    --lower-length
-        filter out reads shorter than this value (default: 150)
-    --upper-length
-        filter out reads longer than this value (default: 100,000)
-
 ```
 
 This step will generate 3 files:
