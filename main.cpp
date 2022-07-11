@@ -14,7 +14,58 @@
 #include <queue>
 #include <unistd.h>
 
-read_set_t read_multiple_inputs(std::vector<std::string> input_files, std::vector<std::string> label_files, bool raw, int lower_len, int upper_len) {
+read_set_t read_multiple_inputs_cluster(std::vector<std::string> input_files, std::vector<std::string> label_files, bool raw, int lower_len, int upper_len) {
+        
+        read_set_t reads;
+
+        bool no_labels = label_files.size() == 0;
+
+        if (input_files.size() != label_files.size() && !no_labels) {
+            throw "\nError: Number of input files and number of label files do not match\n";
+        }
+
+        int sample_number = 0;
+        int reads_num = 0;
+
+        for (std::string i : input_files) {
+            if(access(i.c_str(), F_OK )){
+                throw "\nError: Input file not found! \n";
+            } else {
+
+                std::string sample_label = no_labels ? "" : "," + label_files[sample_number];
+                std::string filename = i;
+                int index = filename.find_last_of(".");
+                std::string extension = filename.substr(index + 1);
+
+                if (!extension.compare("gz")){
+                    filename = unzip_file(filename, index);
+                    index = filename.find_last_of(".");
+                    extension = filename.substr(index + 1);
+                }
+
+                if (!extension.compare("fq") || !extension.compare("fastq")){
+                    // auto file_reads = read_fastq_file(filename, sample_label, raw, lower_len, upper_len);
+                    auto file_reads = read_fastq_file(filename, sample_label, reads_num, raw, lower_len, upper_len);
+                    reads.insert(std::end(reads), std::begin(file_reads), std::end(file_reads));
+                    reads_num = reads.size();
+
+                } else if (!extension.compare("fasta") || !extension.compare("fa")){
+                    // auto file_reads = read_fasta_file(filename, sample_label, raw, lower_len, upper_len);
+                    auto file_reads = read_fasta_file(filename, sample_label, reads_num, raw, lower_len, upper_len);
+                    reads.insert(std::end(reads), std::begin(file_reads), std::end(file_reads));
+                    reads_num = reads.size();
+                } else {
+                    throw "\nError: Input file format incorrect! Please use fasta/fastq file. \n";
+                }
+
+                ++sample_number;
+            }
+        }
+
+        return reads;
+}
+
+read_set_t read_multiple_inputs(std::vector<std::string> input_files, std::vector<std::string> label_files) {
         
         read_set_t reads;
 
@@ -43,12 +94,13 @@ read_set_t read_multiple_inputs(std::vector<std::string> input_files, std::vecto
                 }
 
                 if (!extension.compare("fq") || !extension.compare("fastq")){
-                    auto file_reads = read_fastq_file(filename, sample_label, raw, lower_len, upper_len);
-
+                    // auto file_reads = read_fastq_file(filename, sample_label, raw, lower_len, upper_len);
+                    auto file_reads = read_fastq_file(filename, sample_label);
                     reads.insert(std::end(reads), std::begin(file_reads), std::end(file_reads));
 
                 } else if (!extension.compare("fasta") || !extension.compare("fa")){
-                    auto file_reads = read_fasta_file(filename, sample_label, raw, lower_len, upper_len);
+                    // auto file_reads = read_fasta_file(filename, sample_label, raw, lower_len, upper_len);
+                    auto file_reads = read_fasta_file(filename, sample_label);
                     reads.insert(std::end(reads), std::begin(file_reads), std::end(file_reads));
                 } else {
                     throw "\nError: Input file format incorrect! Please use fasta/fastq file. \n";
@@ -187,7 +239,7 @@ int main(int argc, char *argv[]) {
         std::vector<std::string> labels = splitString(args["label"].as<std::string>(""), ',');;
 
         try {
-           reads = read_multiple_inputs(files, labels, raw, lower_len, upper_len);
+           reads = read_multiple_inputs_cluster(files, labels, raw, lower_len, upper_len);
         }
         catch (const char* c) {
             std::cerr << c;
@@ -208,17 +260,19 @@ int main(int argc, char *argv[]) {
 
         if (!args["iso"]) {
             // translate seq_id to original read id
-            // for (auto &c : gene_clusters) {
-            //     int readID = std::stoi(reads[c.main_seq.seq_id].ann);
-            //     // std::cout << readID << " " << c.main_seq.seq_id << std::endl;
-            //     c.main_seq.seq_id = readID;
+            for (auto &c : gene_clusters) {
+                // std::cout << "\n" << reads[c.main_seq.seq_id].ann << " ";
+                int readID = std::stoi(reads[c.main_seq.seq_id].ann);
+                // std::cout << readID << " " << c.main_seq.seq_id << std::endl;
+                c.main_seq.seq_id = readID;
                 
-            //     for (auto &cs : c.seqs) {
-            //         readID = std::stoi(reads[cs.seq_id].ann);
-            //         // std::cout << readID << " " << cs.seq_id << std::endl;
-            //         cs.seq_id = readID;
-            //     }
-            // }    
+                for (auto &cs : c.seqs) {
+                    // std::cout << reads[cs.seq_id].ann << " ";
+                    readID = std::stoi(reads[cs.seq_id].ann);
+                    // std::cout << readID << " " << cs.seq_id << std::endl;
+                    cs.seq_id = readID;
+                }
+            }    
             hps::to_stream(gene_clusters, out_file);
             out_file.close();
             return EXIT_SUCCESS;
@@ -245,30 +299,30 @@ int main(int argc, char *argv[]) {
 
             // cluster gene reads & save new iso clusters
             auto iso_clusters_tmp = cluster_reads(gene_reads, iso_kmer_size, iso_t_s, iso_t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, false, repr_percentile, is_rna, false, n_threads);
-            for (auto &ic : iso_clusters_tmp) {
-                cluster_t iso_cluster;
-                iso_cluster.main_seq = cseq_t{c.seqs[ic.main_seq.seq_id].seq_id, ic.main_seq.rev};
-
-                for (auto &ics : ic.seqs) {
-                    iso_cluster.seqs.push_back(cseq_t{c.seqs[ics.seq_id].seq_id, ics.rev});
-                }
-
-                iso_clusters.push_back(iso_cluster);
-            }
-
             // for (auto &ic : iso_clusters_tmp) {
             //     cluster_t iso_cluster;
-            //     // translate seq_id to original read id
-            //     int readID = std::stoi(reads[c.seqs[ic.main_seq.seq_id].seq_id].ann);
-            //     iso_cluster.main_seq = cseq_t{readID, ic.main_seq.rev};
+            //     iso_cluster.main_seq = cseq_t{c.seqs[ic.main_seq.seq_id].seq_id, ic.main_seq.rev};
 
             //     for (auto &ics : ic.seqs) {
-            //         readID = std::stoi(reads[c.seqs[ics.seq_id].seq_id].ann);
-            //         iso_cluster.seqs.push_back(cseq_t{readID, ics.rev});
+            //         iso_cluster.seqs.push_back(cseq_t{c.seqs[ics.seq_id].seq_id, ics.rev});
             //     }
 
             //     iso_clusters.push_back(iso_cluster);
             // }
+
+            for (auto &ic : iso_clusters_tmp) {
+                cluster_t iso_cluster;
+                // translate seq_id to original read id
+                int readID = std::stoi(reads[c.seqs[ic.main_seq.seq_id].seq_id].ann);
+                iso_cluster.main_seq = cseq_t{readID, ic.main_seq.rev};
+
+                for (auto &ics : ic.seqs) {
+                    readID = std::stoi(reads[c.seqs[ics.seq_id].seq_id].ann);
+                    iso_cluster.seqs.push_back(cseq_t{readID, ics.rev});
+                }
+
+                iso_clusters.push_back(iso_cluster);
+            }
 
             ++i;
             if (verbose) print_progress(i, gene_clusters.size());
@@ -303,12 +357,6 @@ int main(int argc, char *argv[]) {
             "number of threads to use (default: 1)", 1},
             { "verbose", {"--verbose"},
             "use this flag if need to print the progress", 0},
-            { "raw", {"--raw"},
-            "use this flag if want to use raw datasets", 0},
-            {"lower_len", {"--lower-length"},
-            "set the lower length for input reads filter (default: 150)", 1},
-            {"upper_len", {"--upper-length"},
-            "set the upper length for input reads filter (default: 100,000)", 1},
         }};
 
         argagg::parser_results args;
@@ -338,11 +386,7 @@ int main(int argc, char *argv[]) {
 
         std::cerr << "Reading fasta file... ";
 
-        int lower_len = args["lower_len"].as<int>(150);
-        int upper_len = args["upper_len"].as<int>(100000);
         bool verbose = args["verbose"];
-        bool raw = args["raw"];
-
 
         read_set_t reads;
 
@@ -350,14 +394,14 @@ int main(int argc, char *argv[]) {
         std::vector<std::string> labels = splitString(args["label"].as<std::string>(""), ',');
 
         try {
-           reads = read_multiple_inputs(files, labels, raw, lower_len, upper_len);
+           reads = read_multiple_inputs(files, labels);
         }
         catch (const char* c) {
             std::cerr << c;
             return EXIT_FAILURE;
         }
            
-        sort_read_set(reads);
+        // sort_read_set(reads);
         std::cerr << "Done" << std::endl;
 
         int n_threads = args["threads"].as<int>(1);
@@ -386,13 +430,7 @@ int main(int argc, char *argv[]) {
             { "label", {"-l", "--label"},
             "labels for the files in order of entry", 1},
             { "clusters", {"-c", "--clusters"},
-            "clusters file (required)", 1},     
-            { "raw", {"--raw"},
-            "use this flag if want to use raw datasets", 0},
-            {"lower_len", {"--lower-length"},
-            "set the lower length for input reads filter (default: 150)", 1},
-            {"upper_len", {"--upper-length"},
-            "set the upper length for input reads filter (default: 100,000)", 1},   
+            "clusters file (required)", 1},       
         }};
 
         argagg::parser_results args;
@@ -423,23 +461,19 @@ int main(int argc, char *argv[]) {
         std::cerr << "Reading fasta file... ";
         
         read_set_t reads;
-        int lower_len = args["lower_len"].as<int>(150);
-        int upper_len = args["upper_len"].as<int>(100000);
-        bool raw = args["raw"];
-
 
         std::vector<std::string> files = splitString(args["input"].as<std::string>(""), ',');
         std::vector<std::string> labels = splitString(args["label"].as<std::string>(""), ',');
 
         try {
-           reads = read_multiple_inputs(files, labels, raw, lower_len, upper_len);
+           reads = read_multiple_inputs(files, labels);
         }
         catch (const char* c) {
             std::cerr << c;
             return EXIT_FAILURE;
         }
 
-        sort_read_set(reads);
+        // sort_read_set(reads);
         std::cerr << "Done" << std::endl;
 
         std::ifstream in_file(args["clusters"].as<std::string>(), std::ifstream::binary);
@@ -469,12 +503,6 @@ int main(int argc, char *argv[]) {
             "min reads per cluster to save it into a file", 1},
             { "fastq", {"--fastq"},
             "whether input and output should be in fastq format (instead of fasta)", 0},
-            { "raw", {"--raw"},
-            "use this flag if want to use raw datasets", 0},
-            {"lower_len", {"--lower-length"},
-            "set the lower length for input reads filter (default: 150)", 1},
-            {"upper_len", {"--upper-length"},
-            "set the upper length for input reads filter (default: 100,000)", 1},
         }};
 
         argagg::parser_results args;
@@ -503,24 +531,21 @@ int main(int argc, char *argv[]) {
         }
 
         std::cerr << "Reading fasta file... ";
-        
-        bool raw = args["raw"];
-        int lower_len = args["lower_len"].as<int>(150);
-        int upper_len = args["upper_len"].as<int>(100000);
+    
         read_set_t reads;
 
         std::vector<std::string> files = splitString(args["input"].as<std::string>(""), ',');
         std::vector<std::string> labels = splitString(args["label"].as<std::string>(""), ',');
 
         try {
-           reads = read_multiple_inputs(files, labels, raw, lower_len, upper_len);
+           reads = read_multiple_inputs(files, labels);
         }
         catch (const char* c) {
             std::cerr << c;
             return EXIT_FAILURE;
         }
 
-        sort_read_set(reads);
+        // sort_read_set(reads);
         std::cerr << "Done" << std::endl;
 
         std::ifstream in_file(args["clusters"].as<std::string>(), std::ifstream::binary);
@@ -632,7 +657,7 @@ int main(int argc, char *argv[]) {
             std::vector<int> label_counts(labels.size());
 
             for (auto &s: creads) {
-                auto info = split(reads[s.seq_id].header, '=');
+                auto info = splitString(reads[s.seq_id].header, '=');
                 int rcount = std::stoi(info[1]);
                 total_reads += rcount;
                 // reads[s.seq_id].header contains the information that we need
@@ -661,6 +686,7 @@ int main(int argc, char *argv[]) {
         }
 
         write_fastq_file(correction.consensi, args["output"].as<std::string>(".") + "/transcriptome.fq");
+        std::cerr << "Done" << std::endl;
     } else {
         std::cerr << "Unknown mode. More info" << std::endl;
     }
