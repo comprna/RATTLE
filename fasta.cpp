@@ -30,96 +30,6 @@ std::string unzip_file(std::string filename, int index){
     return filename;
 }
 
-// Further delete
-read_set_t read_fasta_file(std::string file, std::string sample_id, bool raw, int lower_len, int upper_len) {
-    read_set_t result;
-
-    std::ifstream infile(file);
-    std::string line;
-    std::string header;
-    std::string seq;
-    std::string qt = "";
-    bool isLinux = true;
-
-    std::getline(infile, line);
-    if(char (line[line.size() - 1]) == '\r'){
-        isLinux = false;
-        header = line.substr(0, line.size() - 1) + sample_id;
-    } else {
-        header = line + sample_id;
-    }
-
-    if(isLinux){
-        while (std::getline(infile, line)) {
-            if (line.size() == 0) continue;
-
-            if (line[0] == '>') {
-                if (!header.empty()) {
-                    std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-                    if(raw){
-                        for(int i = 0; i < seq.size(); i++){
-                            qt += '~';
-                        }
-                        read_t r{header, seq, "", qt};
-                        result.push_back(r);
-                        qt = "";
-                    } else if( seq.length() >= lower_len && seq.length() <= upper_len){
-                        for(int i = 0; i < seq.size(); i++){
-                            qt += '~';
-                        }
-                        read_t r{header, seq, "", qt};
-                        result.push_back(r);
-                        qt = "";
-                    } 
-                }
-
-                seq = "";
-                header = line + sample_id;
-            } else {
-                seq += line;
-            }
-        }
-    } else {
-        while (std::getline(infile, line)) {
-            if (line.size() == 0) continue;
-
-            if (line[0] == '>') {
-                if (!header.empty()) {
-                    std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-                    if(raw){
-                        for(int i = 0; i < seq.size(); i++){
-                            qt += '~';
-                        }
-                        read_t r{header, seq, "", qt};
-                        result.push_back(r);
-                        qt = "";
-                    } else if( seq.length() >= lower_len && seq.length() <= upper_len){
-                        for(int i = 0; i < seq.size(); i++){
-                            qt += '~';
-                        }
-                        read_t r{header, seq, "", qt};
-                        result.push_back(r);
-                        qt = "";
-                    } 
-                }
-
-                seq = "";
-                header = line.substr(0, line.size() - 1) + sample_id;
-            } else {
-                seq += line.substr(0, line.size() - 1);
-            }
-         }     
-    }
-
-    std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-    if (!header.empty() && seq.length() >= 150 && seq.length() <= 1000000) {
-        read_t r{header, seq, "", ""};
-        result.push_back(r);
-    }
-
-    return result;
-}
-
 read_set_t read_fasta_file(std::string file, std::string sample_id) {
     read_set_t result;
 
@@ -241,6 +151,7 @@ read_set_t read_fasta_file(std::string file, std::string sample_id, int index, b
             if (line[0] == '>') {
                 if (!header.empty()) {
                     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
+                    // Setting fasta file reads quality score value to "~" for error correction
                     if(raw){
                         for(int i = 0; i < seq.size(); i++){
                             qt += '~';
@@ -272,81 +183,6 @@ read_set_t read_fasta_file(std::string file, std::string sample_id, int index, b
         result.push_back(r);
     }
 
-    return result;
-}
-
-// To be delete
-read_set_t read_fastq_file(std::string file, std::string sample_id, bool raw, int lower_len, int upper_len) {
-    read_set_t result;
-
-    std::ifstream infile(file);
-    std::string line;
-    std::string header;
-    std::string seq;
-    std::string ann;
-    std::string qt;
-    int lineID = 0;
-    bool isLinux = true;
-
-    std::getline(infile, line);
-    if(line[line.size() - 1] == '\r'){
-        isLinux = false;
-        header = line.substr(0, line.size() - 1) + sample_id;
-        lineID++;
-    } else {
-        header = line + sample_id;
-        lineID++;
-    }
-
-    if(isLinux){
-        while (std::getline(infile, line)) {
-            if (lineID == 0) {
-                header = line + sample_id;
-                ++lineID;
-            } else if (lineID == 1) {
-                seq = line;
-                ++lineID;
-            } else if (lineID == 2) {
-                ann = line;
-                ++lineID;
-            } else if (lineID == 3) {
-                qt = line;
-                lineID = 0;
-
-                if(raw){
-                    read_t r{header, seq, ann, qt};
-                    result.push_back(r);
-                } else if( seq.length() >= lower_len && seq.length() <= upper_len){
-                    read_t r{header, seq, ann, qt};
-                    result.push_back(r);
-                }
-            }
-        }
-    } else {
-        while (std::getline(infile, line)) {
-            if (lineID == 0) {
-                header = line.substr(0, line.size() - 1) + sample_id;
-                ++lineID;
-            } else if (lineID == 1) {
-                seq = line.substr(0, line.size() - 1);
-                ++lineID;
-            } else if (lineID == 2) {
-                ann = line.substr(0, line.size() - 1);
-                ++lineID;
-            } else if (lineID == 3) {
-                qt = line.substr(0, line.size() - 1);
-                lineID = 0;
-
-                if(raw){
-                    read_t r{header, seq, ann, qt};
-                    result.push_back(r);
-                } else if( seq.length() >= lower_len && seq.length() <= upper_len){
-                    read_t r{header, seq, ann, qt};
-                    result.push_back(r);
-                }
-            }
-        }
-    }
     return result;
 }
 
@@ -452,6 +288,7 @@ read_set_t read_fastq_file(std::string file, std::string sample_id, int index, b
                 // qt = line;
                 lineID = 0;
 
+                // empty quality score value to minimise memory usage for clustering
                 if(raw){
                     read_t r{header, seq, ann, ""};
                     result.push_back(r);
@@ -566,164 +403,6 @@ read_set_t read_fasta_file(std::string file, bool raw, int lower_len, int upper_
     } 
     ++readID;
     
-    return result;
-}
-
-read_set_t read_fasta_file(std::string file) {
-    read_set_t result;
-
-    std::ifstream infile(file);
-    std::string line;
-    std::string header;
-    std::string seq;
-    std::string qt = "";
-    bool isLinux = true;
-
-    // Setting the FASTA format quality value to the maximum value '~' for correction and polish step
-    std::getline(infile, line);
-    if(char (line[line.size() - 1]) == '\r'){
-        isLinux = false;
-        header = line.substr(0, line.size() - 1);
-    } else {
-        header = line;
-    }
-
-    if(isLinux){
-        while (std::getline(infile, line)) {
-            if (line.size() == 0) continue;
-
-            if (line[0] == '>') {
-                if (!header.empty()) {
-                    std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-                    for(int i = 0; i < seq.size(); i++){
-                        qt += '~';
-                    }
-                    read_t r{header, seq, "+", qt};
-                    result.push_back(r);
-                    qt = "";
-                }
-
-                seq = "";
-                header = line;
-            } else {
-                seq += line;
-            }
-        }
-    } else {
-        while (std::getline(infile, line)) {
-            if (line.size() == 0) continue;
-
-            if (line[0] == '>') {
-                if (!header.empty()) {
-                    std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-                    for(int i = 0; i < seq.size(); i++){
-                        qt += '~';
-                    }
-                    read_t r{header, seq, "+", qt};
-                    result.push_back(r);
-                    qt = "";
-                }
-
-                seq = "";
-                header = line.substr(0, line.size() - 1);
-            } else {
-                seq += line.substr(0, line.size() - 1);
-            }
-         }     
-    }
-
-    std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-    for(int i = 0; i < seq.size(); i++){
-        qt += '~';
-    }
-    read_t r{header, seq, "+", qt};
-    result.push_back(r);
-    qt = "";
-    
-    return result;
-}
-
-// Clustering step read_fastq_file function
-read_set_t read_fastq_file(std::string file, bool raw, int lower_len, int upper_len) {
-    read_set_t result;
-
-    std::ifstream infile(file);
-    std::string line;
-    std::string header;
-    std::string seq;
-    std::string ann;                // ann is used to save readID in clustering step
-    // std::string qt;              // Not storing qt to save memory space
-    int lineID = 0;
-    int readID = 0;
-    bool isLinux = true;
-
-    std::getline(infile, line);
-    if(line[line.size() - 1] == '\r'){
-        isLinux = false;
-        header = line.substr(0, line.size() - 1);
-        ++lineID;
-    } else {
-        header = line;
-        ++lineID;
-    }
-
-    if(isLinux){
-        while (std::getline(infile, line)) {
-            if (lineID == 0) {
-                header = line;
-                ++lineID;
-            } else if (lineID == 1) {
-                seq = line;
-                ++lineID;
-            } else if (lineID == 2) {
-                ann = std::to_string(readID);
-                ++readID;
-                ++lineID;
-            } else if (lineID == 3) {
-                // qt = "";
-                lineID = 0;
-
-                if(raw){
-                    // read_t r{header, seq, ann, qt};
-                    read_t r{header, seq, ann, ""};
-                    result.push_back(r);
-                } else if( seq.length() >= lower_len && seq.length() <= upper_len){
-                    // read_t r{header, seq, ann, qt};
-                    read_t r{header, seq, ann, ""};
-                    result.push_back(r);
-                }  else {
-                    // std::cout << header << " " << seq.length() << std::endl;
-                }
-            }
-        }
-    } else {
-        while (std::getline(infile, line)) {
-            if (lineID == 0) {
-                header = line.substr(0, line.size() - 1);
-                ++lineID;
-            } else if (lineID == 1) {
-                seq = line.substr(0, line.size() - 1);
-                ++lineID;
-            } else if (lineID == 2) {
-                ann = std::to_string(readID);
-                ++readID;
-                ++lineID;
-            } else if (lineID == 3) {
-                // qt = "";
-                lineID = 0;
-
-                if(raw){
-                    // read_t r{header, seq, ann, qt};
-                    read_t r{header, seq, ann, ""};
-                    result.push_back(r);
-                } else if( seq.length() >= lower_len && seq.length() <= upper_len){
-                    // read_t r{header, seq, ann, qt};
-                    read_t r{header, seq, ann, ""};
-                    result.push_back(r);
-                }
-            }
-        }
-    }
     return result;
 }
 

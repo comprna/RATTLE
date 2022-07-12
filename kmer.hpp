@@ -40,7 +40,6 @@ inline uint32_t hash_kmer(std::string km) {
 }
 
 read_kmers_t extract_kmers_from_read(std::string read, int kmer_size, bool both_strands);
-read_kmers_t extract_minimizers_from_read(std::string read, int kmer_size, int window_size, bool both_strands);
 std::vector<kmer_match_t> get_common_kmers(const std::vector<kmer_t> &k1, const std::vector<kmer_t> &k2);
 
 #endif
