@@ -58,7 +58,7 @@ read_set_t read_fasta_file(std::string file, std::string sample_id) {
                         qt += '~';
                     }
                     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-                    read_t r{header, seq, "", qt};
+                    read_t r{header, seq, "+", qt};
                     result.push_back(r);
                     qt = "";
                 }
@@ -80,7 +80,7 @@ read_set_t read_fasta_file(std::string file, std::string sample_id) {
                         qt += '~';
                     }
                     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-                    read_t r{header, seq, "", qt};
+                    read_t r{header, seq, "+", qt};
                     result.push_back(r);
                     qt = "";
                 }
@@ -94,10 +94,11 @@ read_set_t read_fasta_file(std::string file, std::string sample_id) {
     }
 
     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-    if (!header.empty() && seq.length() >= 150 && seq.length() <= 1000000) {
-        read_t r{header, seq, "", ""};
-        result.push_back(r);
+    for(int i = 0; i < seq.size(); i++){
+        qt += '~';
     }
+    read_t r{header, seq, "+", qt};
+    result.push_back(r);
 
     return result;
 }
@@ -109,7 +110,7 @@ read_set_t read_fasta_file(std::string file, std::string sample_id, int index, b
     std::string line;
     std::string header;
     std::string seq;
-    std::string qt = "";
+    // std::string qt = "";
     bool isLinux = true;
 
     std::getline(infile, line);
@@ -128,13 +129,19 @@ read_set_t read_fasta_file(std::string file, std::string sample_id, int index, b
                 if (!header.empty()) {
                     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
                     if(raw){
+                        if(seq.find('N') != std::string::npos){
+                            throw "\nReads contain invalid N's. \n";
+                        }
                         read_t r{header, seq, std::to_string(index), ""};
                         result.push_back(r);
-                        qt = "";
+                        // qt = "";
                     } else if( seq.length() >= lower_len && seq.length() <= upper_len){
+                        if(seq.find('N') != std::string::npos){
+                            throw "\nReads contain invalid N's. \n";
+                        }
                         read_t r{header, seq, std::to_string(index), ""};
                         result.push_back(r);
-                        qt = "";
+                        // qt = "";
                     } 
                 }
                 ++index;
@@ -153,20 +160,21 @@ read_set_t read_fasta_file(std::string file, std::string sample_id, int index, b
                     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
                     // Setting fasta file reads quality score value to "~" for error correction
                     if(raw){
-                        for(int i = 0; i < seq.size(); i++){
-                            qt += '~';
+                        if(seq.find('N') != std::string::npos){
+                            throw "\nReads contain invalid N's. \n";
                         }
-                        read_t r{header, seq, "+", qt};
+                        read_t r{header, seq, std::to_string(index), ""};
                         result.push_back(r);
-                        qt = "";
+                        // qt = "";
                     } else if( seq.length() >= lower_len && seq.length() <= upper_len){
-                        for(int i = 0; i < seq.size(); i++){
-                            qt += '~';
+                        if(seq.find('N') != std::string::npos){
+                            throw "\nReads contain invalid N's. \n";
                         }
-                        read_t r{header, seq, "+", qt};
+                        read_t r{header, seq, std::to_string(index), ""};
                         result.push_back(r);
-                        qt = "";
+                        // qt = "";
                     } 
+                    ++index;
                 }
 
                 seq = "";
@@ -178,8 +186,11 @@ read_set_t read_fasta_file(std::string file, std::string sample_id, int index, b
     }
 
     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-    if (!header.empty() && seq.length() >= 150 && seq.length() <= 1000000) {
-        read_t r{header, seq, "", ""};
+    if ((!header.empty() && raw)|| (!header.empty() && seq.length() >= lower_len && seq.length() <= upper_len)) {
+        if(seq.find('N') != std::string::npos){
+            throw "\nReads contain invalid N's. \n";
+        }
+        read_t r{header, seq, std::to_string(index), ""};
         result.push_back(r);
     }
 
@@ -290,9 +301,15 @@ read_set_t read_fastq_file(std::string file, std::string sample_id, int index, b
 
                 // empty quality score value to minimise memory usage for clustering
                 if(raw){
+                    if(seq.find('N') != std::string::npos){
+                        throw "\nReads contain invalid N's. \n";
+                    }
                     read_t r{header, seq, ann, ""};
                     result.push_back(r);
                 } else if( seq.length() >= lower_len && seq.length() <= upper_len){
+                    if(seq.find('N') != std::string::npos){
+                        throw "\nReads contain invalid N's. \n";
+                    }
                     read_t r{header, seq, ann, ""};
                     result.push_back(r);
                 }
@@ -314,95 +331,22 @@ read_set_t read_fastq_file(std::string file, std::string sample_id, int index, b
                 // qt = line.substr(0, line.size() - 1);
                 lineID = 0;
 
-                if(raw){
+                if(raw){ 
+                    if(seq.find('N') != std::string::npos){
+                        throw "\nReads contain invalid N's. \n";
+                    }                  
                     read_t r{header, seq, ann, ""};
                     result.push_back(r);
                 } else if( seq.length() >= lower_len && seq.length() <= upper_len){
+                    if(seq.find('N') != std::string::npos){
+                        throw "\nReads contain invalid N's. \n";
+                    }
                     read_t r{header, seq, ann, ""};
                     result.push_back(r);
                 }
             }
         }
     }
-    return result;
-}
-
-read_set_t read_fasta_file(std::string file, bool raw, int lower_len, int upper_len) {
-    read_set_t result;
-
-    std::ifstream infile(file);
-    std::string line;
-    std::string header;
-    std::string seq;            // No qt, ann is used for storing readID
-    bool isLinux = true;
-    int readID = 0;
-
-    std::getline(infile, line);
-    if(char (line[line.size() - 1]) == '\r'){
-        isLinux = false;
-        header = line.substr(0, line.size() - 1);
-    } else {
-        header = line;
-    }
-
-    if(isLinux){
-        while (std::getline(infile, line)) {
-            if (line.size() == 0) continue;
-
-            if (line[0] == '>') {
-                if (!header.empty()) {
-                    std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-                    if(raw){
-                        read_t r{header, seq, std::to_string(readID), ""};
-                        result.push_back(r);
-                    } else if( seq.length() >= lower_len && seq.length() <= upper_len){
-                        read_t r{header, seq, std::to_string(readID), ""};
-                        result.push_back(r);
-                    } 
-                    ++readID;
-                }
-
-                seq = "";
-                header = line;
-            } else {
-                seq += line;
-            }
-        }
-    } else {
-        while (std::getline(infile, line)) {
-            if (line.size() == 0) continue;
-
-            if (line[0] == '>') {
-                if (!header.empty()) {
-                    std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-                    if(raw){
-                        read_t r{header, seq, std::to_string(readID), ""};
-                        result.push_back(r);
-                    } else if( seq.length() >= lower_len && seq.length() <= upper_len){
-                        read_t r{header, seq, std::to_string(readID), ""};
-                        result.push_back(r);
-                    } 
-                    ++readID;
-                }
-
-                seq = "";
-                header = line.substr(0, line.size() - 1);
-            } else {
-                seq += line.substr(0, line.size() - 1);
-            }
-         }     
-    }
-
-    std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
-    if(raw){
-        read_t r{header, seq, std::to_string(readID), ""};
-        result.push_back(r);
-    } else if( seq.length() >= lower_len && seq.length() <= upper_len){
-        read_t r{header, seq, std::to_string(readID), ""};
-        result.push_back(r);
-    } 
-    ++readID;
-    
     return result;
 }
 
