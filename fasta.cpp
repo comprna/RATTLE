@@ -193,6 +193,7 @@ read_set_t read_fasta_file(std::string file, std::string sample_id, int index, b
         read_t r{header, seq, std::to_string(index), ""};
         result.push_back(r);
     }
+    result.back().quality = std::to_string(++index);
 
     return result;
 }
@@ -347,6 +348,8 @@ read_set_t read_fastq_file(std::string file, std::string sample_id, int index, b
             }
         }
     }
+    result.back().quality = std::to_string(index);
+
     return result;
 }
 

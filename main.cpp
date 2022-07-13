@@ -46,14 +46,14 @@ read_set_t read_multiple_inputs_cluster(std::vector<std::string> input_files, st
                 if (!extension.compare("fq") || !extension.compare("fastq")){
                     // auto file_reads = read_fastq_file(filename, sample_label, raw, lower_len, upper_len);
                     auto file_reads = read_fastq_file(filename, sample_label, reads_num, raw, lower_len, upper_len);
+                    reads_num = std::stoi(file_reads.back().quality);
                     reads.insert(std::end(reads), std::begin(file_reads), std::end(file_reads));
-                    reads_num = reads.size();
 
                 } else if (!extension.compare("fasta") || !extension.compare("fa")){
                     // auto file_reads = read_fasta_file(filename, sample_label, raw, lower_len, upper_len);
                     auto file_reads = read_fasta_file(filename, sample_label, reads_num, raw, lower_len, upper_len);
+                    reads_num = std::stoi(file_reads.back().quality);
                     reads.insert(std::end(reads), std::begin(file_reads), std::end(file_reads));
-                    reads_num = reads.size();
                 } else {
                     throw "\nError: Input file format incorrect! Please use fasta/fastq file. \n";
                 }
