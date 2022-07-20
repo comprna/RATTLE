@@ -227,6 +227,11 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
 
+        if(access(args["output"], F_OK )){
+            std::cerr << "\nOutput folder doesn't exit. Please create it first. \n";
+            return EXIT_FAILURE;
+        }
+
         bool is_rna = args["rna"];
 
         std::cerr << "RNA mode: " << std::boolalpha << is_rna << std::endl;
@@ -328,8 +333,8 @@ int main(int argc, char *argv[]) {
             if (verbose) print_progress(i, gene_clusters.size());
         }
 
-        // std::cerr << "Isoform clustering done" << std::endl;
-        // std::cerr << iso_clusters.size() << " isoform clusters found" << std::endl;
+        std::cerr << "Isoform clustering done" << std::endl;
+        std::cerr << iso_clusters.size() << " isoform clusters found" << std::endl;
         hps::to_stream(iso_clusters, out_file);
         out_file.close();
         return EXIT_SUCCESS;
@@ -530,6 +535,11 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
 
+        if(access(args["output"], F_OK )){
+            std::cerr << "\nOutput folder doesn't exit. Please create it first. \n";
+            return EXIT_FAILURE;
+        }
+        
         std::cerr << "Reading fasta file... ";
     
         read_set_t reads;
