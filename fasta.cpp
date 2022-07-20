@@ -112,6 +112,7 @@ read_set_t read_fasta_file(std::string file, std::string sample_id, int index, b
     std::string seq;
     // std::string qt = "";
     bool isLinux = true;
+    int nCount = 0;
 
     std::getline(infile, line);
     if(char (line[line.size() - 1]) == '\r'){
@@ -130,18 +131,18 @@ read_set_t read_fasta_file(std::string file, std::string sample_id, int index, b
                     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
                     if(raw){
                         if(seq.find('N') != std::string::npos){
-                            throw "\nReads contain invalid N's. \n";
+                            ++nCount;
+                        } else{
+                            read_t r{header, seq, std::to_string(index), ""};
+                            result.push_back(r);
                         }
-                        read_t r{header, seq, std::to_string(index), ""};
-                        result.push_back(r);
-                        // qt = "";
                     } else if( seq.length() >= lower_len && seq.length() <= upper_len){
                         if(seq.find('N') != std::string::npos){
-                            throw "\nReads contain invalid N's. \n";
+                            ++nCount;
+                        } else{
+                            read_t r{header, seq, std::to_string(index), ""};
+                            result.push_back(r);
                         }
-                        read_t r{header, seq, std::to_string(index), ""};
-                        result.push_back(r);
-                        // qt = "";
                     } 
                 }
                 ++index;
@@ -161,18 +162,18 @@ read_set_t read_fasta_file(std::string file, std::string sample_id, int index, b
                     // Setting fasta file reads quality score value to "~" for error correction
                     if(raw){
                         if(seq.find('N') != std::string::npos){
-                            throw "\nReads contain invalid N's. \n";
+                            ++nCount;
+                        } else{
+                            read_t r{header, seq, std::to_string(index), ""};
+                            result.push_back(r);
                         }
-                        read_t r{header, seq, std::to_string(index), ""};
-                        result.push_back(r);
-                        // qt = "";
                     } else if( seq.length() >= lower_len && seq.length() <= upper_len){
                         if(seq.find('N') != std::string::npos){
-                            throw "\nReads contain invalid N's. \n";
+                            ++nCount;
+                        } else{
+                            read_t r{header, seq, std::to_string(index), ""};
+                            result.push_back(r);
                         }
-                        read_t r{header, seq, std::to_string(index), ""};
-                        result.push_back(r);
-                        // qt = "";
                     } 
                     ++index;
                 }
@@ -188,12 +189,17 @@ read_set_t read_fasta_file(std::string file, std::string sample_id, int index, b
     std::transform(seq.begin(), seq.end(),seq.begin(), ::toupper);
     if ((!header.empty() && raw)|| (!header.empty() && seq.length() >= lower_len && seq.length() <= upper_len)) {
         if(seq.find('N') != std::string::npos){
-            throw "\nReads contain invalid N's. \n";
-        }
-        read_t r{header, seq, std::to_string(index), ""};
-        result.push_back(r);
+            ++nCount;
+        } else {
+            read_t r{header, seq, std::to_string(index), ""};
+            result.push_back(r);
+        }        
     }
     result.back().quality = std::to_string(++index);
+
+    if(nCount != 0){
+        std::cerr << "\n" << nCount << "  reads contains N are skipped!" << std::endl;
+    }
 
     return result;
 }
@@ -259,6 +265,7 @@ read_set_t read_fastq_file(std::string file, std::string sample_id) {
             }
         }
     }
+
     return result;
 }
 
@@ -273,6 +280,7 @@ read_set_t read_fastq_file(std::string file, std::string sample_id, int index, b
     // std::string qt;
     int lineID = 0;
     bool isLinux = true;
+    int nCount = 0;
 
     std::getline(infile, line);
     if(line[line.size() - 1] == '\r'){
@@ -303,16 +311,18 @@ read_set_t read_fastq_file(std::string file, std::string sample_id, int index, b
                 // empty quality score value to minimise memory usage for clustering
                 if(raw){
                     if(seq.find('N') != std::string::npos){
-                        throw "\nReads contain invalid N's. \n";
+                        ++nCount;
+                    } else{
+                        read_t r{header, seq, ann, ""};
+                        result.push_back(r);
                     }
-                    read_t r{header, seq, ann, ""};
-                    result.push_back(r);
                 } else if( seq.length() >= lower_len && seq.length() <= upper_len){
                     if(seq.find('N') != std::string::npos){
-                        throw "\nReads contain invalid N's. \n";
+                        ++nCount;
+                    } else {
+                        read_t r{header, seq, ann, ""};
+                        result.push_back(r);
                     }
-                    read_t r{header, seq, ann, ""};
-                    result.push_back(r);
                 }
             }
         }
@@ -334,21 +344,27 @@ read_set_t read_fastq_file(std::string file, std::string sample_id, int index, b
 
                 if(raw){ 
                     if(seq.find('N') != std::string::npos){
-                        throw "\nReads contain invalid N's. \n";
-                    }                  
-                    read_t r{header, seq, ann, ""};
-                    result.push_back(r);
+                        ++nCount;
+                    } else {              
+                        read_t r{header, seq, ann, ""};
+                        result.push_back(r);
+                    }
                 } else if( seq.length() >= lower_len && seq.length() <= upper_len){
                     if(seq.find('N') != std::string::npos){
-                        throw "\nReads contain invalid N's. \n";
+                        ++nCount;
+                    } else{
+                        read_t r{header, seq, ann, ""};
+                        result.push_back(r);
                     }
-                    read_t r{header, seq, ann, ""};
-                    result.push_back(r);
                 }
             }
         }
     }
     result.back().quality = std::to_string(index);
+
+    if(nCount != 0){
+        std::cerr << "\n" << nCount << "  reads contains N are skipped!" << std::endl;
+    }
 
     return result;
 }
