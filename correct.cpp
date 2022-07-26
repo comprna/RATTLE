@@ -326,20 +326,20 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
                 }
 
                 creads[i] = reads[ts.seq_id];
-                i++;
-                total_reads++;
+                ++i;
+                ++total_reads;
             }
 
             if (creads.size() > min_reads) {
                 pending_clusters.push(pack_to_correct_t{cid, creads});
             } else {
                 for (int i = 0; i < creads.size(); ++i) {
-                    corrected++;
+                    ++corrected;
                     uncorrected_read_set.push_back(creads[i]);
                 }
             }
         }
-        cid++;
+        ++cid;
     }
 
     std::mutex mu;
@@ -349,7 +349,6 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
     int nf = 0;
     for (int t = 0; t < n_threads; ++t) {
         tasks.emplace_back(std::async(std::launch::async, [&nf, t, &consensi, &corrected_read_set, &uncorrected_read_set, &consensus_set, &pending_clusters, &mu, &corrected, &total_reads, gap_occ, min_occ, n_threads, &verbose, &labels] {
-            // TODO: check this loop
             while (true) {
                 pack_to_correct_t pack;
                 int a;
@@ -375,39 +374,11 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
                     graph->add_alignment(alignment, creads[j].seq);
                 }
                 
-                // int i = 0;
                 std::vector<std::string> msa;
                 graph->generate_multiple_sequence_alignment(msa);
                 
                 fix_msa_ends(creads, msa);
-                ////// SAVE MSA
-                // i = 0;
 
-                // std::ofstream f;
-                // f.open("corr_aln.aln");
-
-                // for (const auto& it: msa) {
-                //     f << creads[i].header << std::endl;
-                //     f << it << std::endl;
-                //     i++;
-                // }
-
-                // f.close();
-                ////// SAVE MSA
-
-                // std::ofstream f;
-                // f.open("aln_" + std::to_string(a) + ".aln");
-
-                // for (const auto& it: msa) {
-                //     f << creads[i].header << std::endl;
-                //     f << it << std::endl;
-                //     i++;
-                // }
-
-                // f.close();
-                
-                // TODO: Check the last parameter should be 1 or n_threads
-                // TODO: check the following correct_read_pack function
                 auto corrected_reads_pack = correct_read_pack(creads, msa, min_occ, gap_occ, 30.0, 1);
                 // auto corrected_reads_pack = correct_read_pack(creads, msa, min_occ, gap_occ, 30.0, n_threads);
                 auto corrected_reads = corrected_reads_pack.reads;
@@ -437,35 +408,7 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
                 msa = std::vector<std::string>();
                 graph->generate_multiple_sequence_alignment(msa);
                 fix_msa_ends(corrected_reads, msa);
-                // for (int j = 0; j < msa.size(); ++j) {
-                //     std::cout << msa[j].size() << std::endl;
-                // }
-                // std::cout << "---------" << std::endl;
 
-                //////// SAVE CORRECTED MSA
-                // i = 0;
-
-                // std::ofstream f;
-                // f.open("corr_aln_" + std::to_string(a) + ".aln");
-
-                // for (const auto& it: msa) {
-                //     f << corrected_reads[i].header << std::endl;
-                //     f << it << std::endl;
-                //     i++;
-                // }
-
-                // f.close();
-                //////// SAVE CORRECTED MSA
-
-                //auto consensus = graph->generate_consensus();
-                // for (int j = 0; j < msa.size(); ++j) {
-                //     std::cout << int(msa[j][0]) << std::endl;
-                // }
-
-                // std::cout << "-------" << std::endl;
-                // for (int j = 0; j < msa.size(); ++j) {
-                //     std::cout << msa[j].size() << std::endl;
-                // }
                 auto cv = generate_consensus_vector(corrected_reads, msa, n_threads);
                 // print_vector(cv.consensus_nt);
                 cv.consensus_nt.erase(std::remove(cv.consensus_nt.begin(), cv.consensus_nt.end(), '-'), cv.consensus_nt.end());
