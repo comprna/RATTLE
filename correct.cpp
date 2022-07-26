@@ -409,7 +409,9 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
                 graph->generate_multiple_sequence_alignment(msa);
                 fix_msa_ends(corrected_reads, msa);
 
-                auto cv = generate_consensus_vector(corrected_reads, msa, n_threads);
+                // TODO: check and compare to use 1 or n_threads
+                auto cv = generate_consensus_vector(corrected_reads, msa, 1);
+                // auto cv = generate_consensus_vector(corrected_reads, msa, n_threads);
                 // print_vector(cv.consensus_nt);
                 cv.consensus_nt.erase(std::remove(cv.consensus_nt.begin(), cv.consensus_nt.end(), '-'), cv.consensus_nt.end());
                 // print_vector(cv.consensus_nt);
