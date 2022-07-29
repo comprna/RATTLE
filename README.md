@@ -306,7 +306,7 @@ A consensus from each column in the MSA is then extracted in the following way: 
 
 ## Polishing step
 
-In this last RATTLE step, transcript consensus sequences and gene definitions are reassessed to perform a cluster refinement using the same RATTLE metrics, and to obtain a final set of transcripts, consensus sequences, and abundances.
+In this last RATTLE step, transcript consensus sequences and gene definitions are reassessed to perform a cluster refinement using the same RATTLE metrics, and to obtain a final set of transcripts, consensus sequences (transcript_clusters), abundances (total_reads) and labels.
 
 ```
 $ ./rattle polish -h
@@ -482,10 +482,10 @@ python ./misc/cluster_benchmark.py ./toyset/cluster_benchmark/input/sample.fa ./
 This cluster accuracy benchmark result is generated from RATTLE v1.0.
 | mode - reference    | homogeneity   | completeness   |
 | :----------------|:-------------:| :-------------|
-| rna - transcriptome  | 84.56%    |92.22%     |
-| rna - genome  |  99.51%    |90.08%         |
-| dna - transcriptome  | 84.52%   |92.21%     |
-| dna - genome  |  99.47%    |90.07%         |
+| RNA - transcriptome  | 84.56%    |92.22%     |
+| RNA - genome  |  99.51%    |90.08%         |
+| cDNA - transcriptome  | 84.52%   |92.21%     |
+| cDNA - genome  |  99.47%    |90.07%         |
 
 # Snakemake
 
