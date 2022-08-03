@@ -232,9 +232,9 @@ $ ./rattle cluster_summary -h
         clusters file. This is the output file from clustering step (required)
 ```
 
-This command will output a CSV file to stdout containing two columns:
+This command will output a CSV file to stdout containing two or three columns:
 ```
-read_id, cluster_id
+read_id, gene_cluster_id, [transcript_cluster_id]
 ```
 
 ### Cluster extraction

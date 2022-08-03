@@ -17,6 +17,18 @@ void print_vector(const std::vector<char> &v) {
     std::cout << std::endl;
 }
 
+std::vector<std::string> splitString(std::string str, char delimiter) {
+    std::vector<std::string> internal;
+    std::stringstream ss(str); // Turn the string into a stream.
+    std::string tok;
+
+    while(getline(ss, tok, delimiter)) {
+        internal.push_back(tok);
+    }
+
+    return internal;
+}
+
 void fix_msa_ends(read_set_t &reads, msa_t &aln) {
     for (int i = 0; i < aln.size(); ++i) {
         bool reversed = false;
@@ -310,6 +322,7 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
         // int n_files = (tc.seqs.size() + split - 1) / split; // ceil(tc.seqs.size / split)
         // Avoid out of bound
         int n_files = (tc.seqs.size() - 1) / split + 1;
+        int gid = tc.main_seq.gene_id; 
 
         // Split clusters
         for (int nf = 0; nf < n_files; nf++) {
@@ -325,6 +338,7 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
                     std::reverse(reads[ts.seq_id].quality.begin(), reads[ts.seq_id].quality.end()); 
                 }
 
+                reads[ts.seq_id].header = reads[ts.seq_id].header + ",gene_cluster_" + std::to_string(gid);
                 creads[i] = reads[ts.seq_id];
                 ++i;
                 ++total_reads;
@@ -420,20 +434,25 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
                 {
                     std::lock_guard<std::mutex> lock(mu);
                     
-                    // save in consensus header the number of reads of this cluster
-                    // add file labels & labels counts to consensi header 
-                    std::vector<std::string> labelset;               
+                    // save in consensus header the gene cluster id (if applicable)
+                    // the number of reads of this cluster
+                    // add file labels & labels counts to consensi header
+                    std::vector<std::string> labelset;     
+                    std::string gid;        
                     for(auto r: creads){
-                        int index = r.header.find_last_of(",");
-                        std::string label = r.header.substr(index + 1);
+                        int index = r.header.find_first_of(",");
+                        int i = r.header.find_last_of(",");
+                        std::string label = r.header.substr(index + 1, i - index - 1);
                         labelset.push_back(label);
+                        index = r.header.find_last_of("_");
+                        gid = r.header.substr(index + 1);
                     }
 
                     std::string label_result;
                     for(auto label: labels){
                         label_result = label_result + " " + label + ":" + std::to_string(count(labelset.begin(), labelset.end(), label));
                     }
-                    consensi[pack.original_cluster_id].push_back(read_t{std::to_string(creads.size()) + "," + label_result, consensus, "+", std::string(consensus.size(), 'K')});
+                    consensi[pack.original_cluster_id].push_back(read_t{gid + "," + std::to_string(creads.size()) + "," + label_result, consensus, "+", std::string(consensus.size(), 'K')});
 
                     // // sort corrected cluster
                     // std::stable_sort(corrected_reads.begin(), corrected_reads.end(), [](read_t a, read_t b) {
@@ -457,12 +476,14 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
         int total_reads = 0;
         std::vector<int> label_counts(labels.size());
         std::string labels_result="";
+        int gid;
 
         for (const auto& rit: it) {
-            int index = rit.header.find_first_of(",");
-            total_reads += std::stoi(rit.header.substr(0, index));
+            auto num = splitString(rit.header, ',');
+            gid = std::stoi(num[0]);
+            total_reads += std::stoi(num[1]);
 
-            int  i = 0;
+            int index, i = 0;
             for(auto label: labels){
                 if(rit.header.find(label) != std::string::npos){
                     index = rit.header.find(label);
@@ -497,26 +518,22 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
             graph->generate_multiple_sequence_alignment(msa);
             fix_msa_ends(it, msa);
 
-            // int i = 0;
-            // std::ofstream f;
-            // f.open("cons.aln");
-
-            // for (const auto& mit: msa) {
-            //     f << it[i].header << std::endl;
-            //     f << mit << std::endl;
-            //     i++;
-            // }
-
-            // f.close();
-
             auto cv = generate_consensus_vector(it, msa, n_threads);
             cv.consensus_nt.erase(std::remove(cv.consensus_nt.begin(), cv.consensus_nt.end(), '-'), cv.consensus_nt.end());
             std::string consensus(cv.consensus_nt.begin(), cv.consensus_nt.end());
-
-            consensus_set.push_back(read_t{"@cluster_" + std::to_string(cid) + " reads=" + std::to_string(total_reads) + " labels=" + labels_result, consensus, "+", std::string(consensus.size(), 'K')});
+            
+            if(gid != -1){
+                consensus_set.push_back(read_t{"@cluster_" + std::to_string(cid) + " gene_cluster_" + std::to_string(gid) + " reads=" + std::to_string(total_reads) + " labels=" + labels_result, consensus, "+", std::string(consensus.size(), 'K')});
+            } else {
+                consensus_set.push_back(read_t{"@cluster_" + std::to_string(cid) + " reads=" + std::to_string(total_reads) + " labels=" + labels_result, consensus, "+", std::string(consensus.size(), 'K')});
+            }
         } else {
             if (it.size() > 0) {
-                consensus_set.push_back(read_t{"@cluster_" + std::to_string(cid) + " reads=" + std::to_string(total_reads) + " labels=" + labels_result, it[0].seq, "+", it[0].quality});
+                if(gid != -1){
+                    consensus_set.push_back(read_t{"@cluster_" + std::to_string(cid) + " gene_cluster_" + std::to_string(gid)+ " reads=" + std::to_string(total_reads) + " labels=" + labels_result, it[0].seq, "+", it[0].quality});
+                }else {
+                    consensus_set.push_back(read_t{"@cluster_" + std::to_string(cid) + " reads=" + std::to_string(total_reads) + " labels=" + labels_result, it[0].seq, "+", it[0].quality});
+                }
             }
         }
 

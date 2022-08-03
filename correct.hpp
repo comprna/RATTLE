@@ -43,5 +43,6 @@ consensus_vector_t generate_consensus_vector(const read_set_t &reads, const msa_
 corrected_pack_t correct_read_pack(const read_set_t &reads, const msa_t &aln, double min_occ, double gap_occ, double err_ratio, int n_threads);
 correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &reads, double min_occ, double gap_occ, double err_ratio, int split, int min_reads, int n_threads, bool verbose, std::vector<std::string> labels);
 void fix_msa_ends(read_set_t &reads, msa_t &aln);
+std::vector<std::string> splitString(std::string str, char delimiter);
 
 #endif

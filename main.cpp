@@ -113,17 +113,17 @@ read_set_t read_multiple_inputs(std::vector<std::string> input_files, std::vecto
         return reads;
 }
 
-std::vector<std::string> splitString(std::string str, char delimiter) {
-    std::vector<std::string> internal;
-    std::stringstream ss(str); // Turn the string into a stream.
-    std::string tok;
+// std::vector<std::string> splitString(std::string str, char delimiter) {
+//     std::vector<std::string> internal;
+//     std::stringstream ss(str); // Turn the string into a stream.
+//     std::string tok;
 
-    while(getline(ss, tok, delimiter)) {
-        internal.push_back(tok);
-    }
+//     while(getline(ss, tok, delimiter)) {
+//         internal.push_back(tok);
+//     }
 
-    return internal;
-}
+//     return internal;
+// }
 
 int main(int argc, char *argv[]) {
     if (argc < 2) {
@@ -266,15 +266,11 @@ int main(int argc, char *argv[]) {
         if (!args["iso"]) {
             // translate seq_id to original read id
             for (auto &c : gene_clusters) {
-                // std::cout << "\n" << reads[c.main_seq.seq_id].ann << " ";
                 int readID = std::stoi(reads[c.main_seq.seq_id].ann);
-                // std::cout << readID << " " << c.main_seq.seq_id << std::endl;
                 c.main_seq.seq_id = readID;
                 
                 for (auto &cs : c.seqs) {
-                    // std::cout << reads[cs.seq_id].ann << " ";
                     readID = std::stoi(reads[cs.seq_id].ann);
-                    // std::cout << readID << " " << cs.seq_id << std::endl;
                     cs.seq_id = readID;
                 }
             }    
@@ -303,27 +299,17 @@ int main(int argc, char *argv[]) {
             }
 
             // cluster gene reads & save new iso clusters
-            auto iso_clusters_tmp = cluster_reads(gene_reads, iso_kmer_size, iso_t_s, iso_t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, false, repr_percentile, is_rna, false, n_threads);
-            // for (auto &ic : iso_clusters_tmp) {
-            //     cluster_t iso_cluster;
-            //     iso_cluster.main_seq = cseq_t{c.seqs[ic.main_seq.seq_id].seq_id, ic.main_seq.rev};
-
-            //     for (auto &ics : ic.seqs) {
-            //         iso_cluster.seqs.push_back(cseq_t{c.seqs[ics.seq_id].seq_id, ics.rev});
-            //     }
-
-            //     iso_clusters.push_back(iso_cluster);
-            // }
+            auto iso_clusters_tmp = cluster_reads(gene_reads, iso_kmer_size, iso_t_s, iso_t_v, bv_threshold, bv_min_threshold, bv_falloff, min_reads_cluster, false, repr_percentile, is_rna, verbose, n_threads);
 
             for (auto &ic : iso_clusters_tmp) {
                 cluster_t iso_cluster;
                 // translate seq_id to original read id
                 int readID = std::stoi(reads[c.seqs[ic.main_seq.seq_id].seq_id].ann);
-                iso_cluster.main_seq = cseq_t{readID, ic.main_seq.rev};
+                iso_cluster.main_seq = cseq_t{readID, ic.main_seq.rev, i};
 
                 for (auto &ics : ic.seqs) {
                     readID = std::stoi(reads[c.seqs[ics.seq_id].seq_id].ann);
-                    iso_cluster.seqs.push_back(cseq_t{readID, ics.rev});
+                    iso_cluster.seqs.push_back(cseq_t{readID, ics.rev, i});
                 }
 
                 iso_clusters.push_back(iso_cluster);
@@ -486,10 +472,15 @@ int main(int argc, char *argv[]) {
 
         int cid = 0;
         for (auto c : clusters) {
-            for (auto seq : c.seqs) {
-                std::cout << reads[seq.seq_id].header << "," << cid << std::endl;
+            if(c.main_seq.gene_id == -1){
+                for (auto seq : c.seqs) {
+                    std::cout << reads[seq.seq_id].header << ",gene_cluster_" << cid << std::endl;
+                }
+            } else{
+                for (auto seq : c.seqs) {
+                    std::cout << reads[seq.seq_id].header << ",gene_cluster_" << seq.gene_id << ",transcript_cluster_" << cid  << std::endl;
+                }
             }
-
             ++cid;
         }
     } else if (!strcmp(mode, "extract_clusters")) {
@@ -583,18 +574,35 @@ int main(int argc, char *argv[]) {
                 std::ofstream cfile;
                 cfile.open(ss_fn.str());
                 
-                for (auto seq : c.seqs) {
-                    // std::cout << reads[seq.seq_id].header << "," << cid << std::endl;
-                    cfile << reads[seq.seq_id].header << "\n";
-                    if (seq.rev) {
-                        cfile << reverse_complement(reads[seq.seq_id].seq) << "\n";
-                    } else {
-                        cfile << reads[seq.seq_id].seq << "\n";
-                    }
+                if(c.main_seq.gene_id == -1){
+                    for (auto seq : c.seqs) {
+                        // std::cout << reads[seq.seq_id].header << "," << cid << std::endl;
+                        cfile << reads[seq.seq_id].header << "\n";
+                        if (seq.rev) {
+                            cfile << reverse_complement(reads[seq.seq_id].seq) << "\n";
+                        } else {
+                            cfile << reads[seq.seq_id].seq << "\n";
+                        }
 
-                    if (args["fastq"]) {
-                        cfile << reads[seq.seq_id].ann << "\n";
-                        cfile << reads[seq.seq_id].quality << "\n";
+                        if (args["fastq"]) {
+                            cfile << reads[seq.seq_id].ann << "\n";
+                            cfile << reads[seq.seq_id].quality << "\n";
+                        }
+                    }
+                } else {
+                    for (auto seq : c.seqs) {
+                        // std::cout << reads[seq.seq_id].header << "," << cid << std::endl;
+                        cfile << reads[seq.seq_id].header << "," << seq.gene_id << "\n";
+                        if (seq.rev) {
+                            cfile << reverse_complement(reads[seq.seq_id].seq) << "\n";
+                        } else {
+                            cfile << reads[seq.seq_id].seq << "\n";
+                        }
+
+                        if (args["fastq"]) {
+                            cfile << reads[seq.seq_id].ann << "\n";
+                            cfile << reads[seq.seq_id].quality << "\n";
+                        }
                     }
                 }
                 
@@ -660,7 +668,10 @@ int main(int argc, char *argv[]) {
         auto clusters = cluster_reads(reads, 6, 0.5, 25, 0.4, 0.4, 0.05, 0, false, 0.15, is_rna, verbose, n_threads);
         auto correction = correct_reads(clusters, reads, 0.3, 0.3, 30.0, 200, 0, n_threads, verbose, {});
 
-        int cid = 0;
+        int cid = 0; // gene cluster id for gene mode, transcript cluster id for isoform mode
+        // <cluster_step_id, polish_step_id>
+        std::map<int, int> geneMap; // a map to record the correspondence of cluster and polish step gene cluster id
+        int gid = -1;  // -1 for label the gene mode
         for (auto &r: correction.consensi) {
             int total_reads = 0;
             auto creads = clusters[cid].seqs;
@@ -683,16 +694,50 @@ int main(int argc, char *argv[]) {
                     }
                     ++i;
                 }
+
+                if(reads[s.seq_id].header.find("gene_cluster") != std::string::npos){
+                    auto info = splitString(reads[s.seq_id].header, '_');
+                    int id = std::stoi(info[3]);
+                    // std::cout << reads[s.seq_id].header << " " << id << std::endl;
+                    if(geneMap.find(id) == geneMap.end()){
+                        if(gid == -1){
+                            gid = id;
+                        }
+                        geneMap.insert(std::pair<int, int> (id, gid));
+                    } else {
+                        gid = geneMap.find(id)->second;
+                    }
+                }
             }
 
-            int index = r.header.find("labels");
-            r.header = r.header.substr(0, index) + " total_reads=" + std::to_string(total_reads) + " labels=";
+            // int index = r.header.find("labels");
+            auto info = splitString(r.header, '=');
+            int rcount = std::stoi(info[1]);
+            // std::cout << r.header << " " << r.header.find("gene_cluster") << std::endl;
+        
+            // if(r.header.find("gene_cluster") != std::string::npos){
+                // info = splitString(r.header, '_');
+                // int id = std::stoi(info[3]);
+                // if(geneMap.find(id) == geneMap.end()){
+                //     if(gid == -1){
+                //         gid = id;
+                //     }
+                //     geneMap.insert(std::pair<int, int> (id, gid));
+                // } else {
+                //     gid = geneMap.find(id)->second;
+                // }
+            if(gid != -1){
+                r.header = "@cluster_" + std::to_string(cid) + " gene_cluster_" + std::to_string(gid) + " transcript_clusters=" + std::to_string(rcount) + " total_reads=" + std::to_string(total_reads) + " labels=";
+            } else{
+                r.header = "@cluster_" + std::to_string(cid) + " transcript_clusters=" + std::to_string(rcount) + " total_reads=" + std::to_string(total_reads) + " labels=";
+            }
             int i = 0;
             for(auto label: labels){
                 r.header += label + ":" + std::to_string(label_counts[i]) + ",";
                 ++i;
             }
-            cid++;
+            ++cid;
+            gid = -1;
         }
 
         write_fastq_file(correction.consensi, args["output"].as<std::string>(".") + "/transcriptome.fq");

@@ -10,15 +10,16 @@
 struct cseq_t {
     int seq_id;
     bool rev;
+    int gene_id = -1;
 
     template <class B>
     void serialize(B& buf) const {
-        buf << seq_id << rev;
+        buf << seq_id << rev << gene_id;
     }
 
     template <class B>
     void parse(B& buf) {
-        buf >> seq_id >> rev;
+        buf >> seq_id >> rev >> gene_id;
     }
 };
 
