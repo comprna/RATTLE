@@ -306,7 +306,7 @@ A consensus from each column in the MSA is then extracted in the following way: 
 
 ## Polishing step
 
-In this last RATTLE step, transcript consensus sequences and gene definitions are reassessed to perform a cluster refinement using the same RATTLE metrics, and to obtain a final set of transcripts, consensus sequences (transcript_clusters), abundances (total_reads) and labels.
+In this last RATTLE step, transcript consensus sequences and gene definitions are reassessed to perform a cluster refinement using the same RATTLE metrics, and to obtain a final set of transcripts, consensus sequences (generated_from_transcript_clusters), abundances (total_reads) and labels.
 
 ```
 $ ./rattle polish -h

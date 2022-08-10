@@ -6,7 +6,6 @@
 #include "hps/src/hps.h"
 #include "spoa/spoa.hpp"
 
-#include <iostream>
 #include <future>
 #include <fstream>
 #include <stdio.h>
@@ -44,7 +43,6 @@ read_set_t read_multiple_inputs_cluster(std::vector<std::string> input_files, st
                 }
 
                 if (!extension.compare("fq") || !extension.compare("fastq")){
-                    // auto file_reads = read_fastq_file(filename, sample_label, raw, lower_len, upper_len);
                     auto file_reads = read_fastq_file(filename, sample_label, reads_num, raw, lower_len, upper_len);
                     reads_num = std::stoi(file_reads.back().quality);
                     reads.insert(std::end(reads), std::begin(file_reads), std::end(file_reads));
@@ -727,9 +725,9 @@ int main(int argc, char *argv[]) {
                 //     gid = geneMap.find(id)->second;
                 // }
             if(gid != -1){
-                r.header = "@cluster_" + std::to_string(cid) + " gene_cluster_" + std::to_string(gid) + " transcript_clusters=" + std::to_string(rcount) + " total_reads=" + std::to_string(total_reads) + " labels=";
+                r.header = "@transcript_cluster_" + std::to_string(cid) + " gene_cluster_" + std::to_string(gid) + " generated_from_transcript_clusters=" + std::to_string(rcount) + " total_reads=" + std::to_string(total_reads) + " labels=";
             } else{
-                r.header = "@cluster_" + std::to_string(cid) + " transcript_clusters=" + std::to_string(rcount) + " total_reads=" + std::to_string(total_reads) + " labels=";
+                r.header = "@cluster_" + std::to_string(cid) + " generated_from_transcript_clusters=" + std::to_string(rcount) + " total_reads=" + std::to_string(total_reads) + " labels=";
             }
             int i = 0;
             for(auto label: labels){
