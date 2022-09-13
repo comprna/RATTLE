@@ -11,7 +11,7 @@
 
 cseq_t cluster_together(const read_set_t &reads, const std::vector<std::vector<kmer_t>> &kmers, const std::vector<std::vector<kmer_t>> &rev_kmers, const std::vector<kmer_bv_t> &bv_kmers, const std::vector<kmer_bv_t> &rev_bv_kmers, int i, int j, int kmer_size, double t_s, double t_v, double bv_threshold, bool use_hc, bool is_rna) {    // filter by kmer bv intersection score
     auto bv_common = (bv_kmers[i] & bv_kmers[j]).count();
-    auto rev_bv_common = (bv_kmers[i] & rev_bv_kmers[j]).count();
+    auto rev_bv_common = (rev_bv_kmers[i] & rev_bv_kmers[j]).count();
 
     double mmax = std::max(bv_kmers[i].count(), bv_kmers[j].count());
     double bv_score = std::max(bv_common/mmax, rev_bv_common/mmax);
