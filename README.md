@@ -483,9 +483,9 @@ This cluster accuracy benchmark result is generated from RATTLE v1.0.
 | mode - reference    | homogeneity   | completeness   |
 | :----------------|:-------------:| :-------------|
 | RNA - transcriptome  | 84.56%    |92.22%     |
-| RNA - genome  |  99.51%    |90.08%         |
+| RNA - genome  |  98.87%    |96.24%         |
 | cDNA - transcriptome  | 84.52%   |92.21%     |
-| cDNA - genome  |  99.47%    |90.07%         |
+| cDNA - genome  |  98.78%    |96.22%         |
 
 # Snakemake
 
