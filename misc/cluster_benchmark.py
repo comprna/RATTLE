@@ -33,13 +33,15 @@ with open('./toyset/cluster_benchmark/input/ref.fa', 'r') as f:
             tsp[l[0][1:]] = l[3][5:]
 
 labels_true_t = []
-labels_pred =[]
+labels_pred_t =[]
+labels_pred_g =[]
 labels_true_g = []
 for line in csv_reader:
     labels_true_t.append(line[1])
-    labels_pred.append(line[2])
+    labels_pred_g.append(line[2])
+    labels_pred_t.append(line[3])
     labels_true_g.append(tsp[line[1]])
-print("homogeneity score with transcriptome is: {:.2f}%".format(metrics.homogeneity_score(labels_true_t, labels_pred) * 100))
-print("completeness score with transcriptome is: {:.2f}%".format(metrics.completeness_score(labels_true_t, labels_pred) * 100))
-print("homogeneity score with gene is: {:.2f}%".format(metrics.homogeneity_score(labels_true_g, labels_pred) * 100))
-print("completeness score with gene is: {:.2f}%".format(metrics.completeness_score(labels_true_g, labels_pred) * 100))
+print("homogeneity score with transcriptome is: {:.2f}%".format(metrics.homogeneity_score(labels_true_t, labels_pred_t) * 100))
+print("completeness score with transcriptome is: {:.2f}%".format(metrics.completeness_score(labels_true_t, labels_pred_t) * 100))
+print("homogeneity score with gene is: {:.2f}%".format(metrics.homogeneity_score(labels_true_g, labels_pred_g) * 100))
+print("completeness score with gene is: {:.2f}%".format(metrics.completeness_score(labels_true_g, labels_pred_g) * 100))
