@@ -225,7 +225,7 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
 
-        if(access(args["output"], F_OK )){
+        if(args["output"] && access(args["output"], F_OK )){
             std::cerr << "\nOutput folder doesn't exit. Please create it first. \n";
             return EXIT_FAILURE;
         }
@@ -524,7 +524,7 @@ int main(int argc, char *argv[]) {
             return EXIT_FAILURE;
         }
 
-        if(access(args["output"], F_OK )){
+        if(args["output"] && access(args["output"], F_OK )){
             std::cerr << "\nOutput folder doesn't exit. Please create it first. \n";
             return EXIT_FAILURE;
         }
