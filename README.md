@@ -324,6 +324,8 @@ $ ./rattle polish -h
         use this mode if data is direct RNA (disables checking both strands)
     --verbose
         use this flag to print the progress of the run
+    --summary
+        use this flag to print a summary of transcript/gene clusters used to genearte the transcriptome
 ```
 
 Input must be the consensus sequences from the previous step.
