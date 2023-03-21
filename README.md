@@ -332,7 +332,7 @@ Input must be the consensus sequences from the previous step.
 
 The `--summary` option provides a summary of which transcript cluster and gene cluster we use to generate the transcriptome. The ids of transcript and gene cluster are the same with the clustering and error correction step. The ids of the new_cluster are the new cluster ids for the polish transcriptome. 
 ```
-transcript_cluster, gene_cluster_id, new_cluster_id
+transcript_cluster_id, gene_cluster_id, new_cluster_id
 ```
 
 # Example dataset
