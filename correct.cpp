@@ -317,6 +317,13 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
     read_set_t uncorrected_read_set;
     read_set_t corrected_read_set;
     read_set_t consensus_set;
+    
+    bool gene_mode;
+    if(clusters[0].main_seq.gene_id == -1){
+        gene_mode = true;
+    } else {
+        gene_mode = false;
+    }
 
     for (auto &tc: clusters) {           
         // int n_files = (tc.seqs.size() + split - 1) / split; // ceil(tc.seqs.size / split)
@@ -338,7 +345,13 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
                     std::reverse(reads[ts.seq_id].quality.begin(), reads[ts.seq_id].quality.end()); 
                 }
 
-                reads[ts.seq_id].header = reads[ts.seq_id].header + ",gene_cluster_" + std::to_string(gid);
+                if(gid == -1) {
+                    reads[ts.seq_id].header = reads[ts.seq_id].header + ",gene_cluster_" + std::to_string(cid);  
+                }
+                else {
+                    reads[ts.seq_id].header = reads[ts.seq_id].header + ",gene_cluster_" + std::to_string(gid) + ",transcript_cluster_" + std::to_string(cid);
+                }
+                
                 creads[i] = reads[ts.seq_id];
                 ++i;
                 ++total_reads;
@@ -441,11 +454,12 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
                     std::string gid;        
                     for(auto r: creads){
                         int index = r.header.find_first_of(",");
-                        int i = r.header.find_last_of(",");
-                        std::string label = r.header.substr(index + 1, i - index - 1);
+                        int i = r.header.substr(index + 1).find_first_of(",");
+                        std::string label = r.header.substr(index + 1, i);
                         labelset.push_back(label);
-                        index = r.header.find_last_of("_");
-                        gid = r.header.substr(index + 1);
+                        // index = r.header.find_last_of("_");
+                        index = r.header.find("gene_cluster");
+                        gid = std::to_string(std::stoi(r.header.substr(index + 13)));
                     }
 
                     std::string label_result;
@@ -522,17 +536,17 @@ correction_results_t correct_reads(const cluster_set_t &clusters, read_set_t &re
             cv.consensus_nt.erase(std::remove(cv.consensus_nt.begin(), cv.consensus_nt.end(), '-'), cv.consensus_nt.end());
             std::string consensus(cv.consensus_nt.begin(), cv.consensus_nt.end());
             
-            if(gid != -1){
-                consensus_set.push_back(read_t{"@cluster_" + std::to_string(cid) + " gene_cluster_" + std::to_string(gid) + " reads=" + std::to_string(total_reads) + " labels=" + labels_result, consensus, "+", std::string(consensus.size(), 'K')});
+            if(!gene_mode){
+                consensus_set.push_back(read_t{"@transcript_cluster_" + std::to_string(cid) + " gene_cluster_" + std::to_string(gid) + " reads=" + std::to_string(total_reads) + " labels=" + labels_result, consensus, "+", std::string(consensus.size(), 'K')});
             } else {
-                consensus_set.push_back(read_t{"@cluster_" + std::to_string(cid) + " reads=" + std::to_string(total_reads) + " labels=" + labels_result, consensus, "+", std::string(consensus.size(), 'K')});
+                consensus_set.push_back(read_t{"@gene_cluster_" + std::to_string(cid) + " reads=" + std::to_string(total_reads) + " labels=" + labels_result, consensus, "+", std::string(consensus.size(), 'K')});
             }
         } else {
             if (it.size() > 0) {
-                if(gid != -1){
-                    consensus_set.push_back(read_t{"@cluster_" + std::to_string(cid) + " gene_cluster_" + std::to_string(gid)+ " reads=" + std::to_string(total_reads) + " labels=" + labels_result, it[0].seq, "+", it[0].quality});
+                if(!gene_mode){
+                    consensus_set.push_back(read_t{"@transcript_cluster_" + std::to_string(cid) + " gene_cluster_" + std::to_string(gid)+ " reads=" + std::to_string(total_reads) + " labels=" + labels_result, it[0].seq, "+", it[0].quality});
                 }else {
-                    consensus_set.push_back(read_t{"@cluster_" + std::to_string(cid) + " reads=" + std::to_string(total_reads) + " labels=" + labels_result, it[0].seq, "+", it[0].quality});
+                    consensus_set.push_back(read_t{"@gene_cluster_" + std::to_string(cid) + " reads=" + std::to_string(total_reads) + " labels=" + labels_result, it[0].seq, "+", it[0].quality});
                 }
             }
         }

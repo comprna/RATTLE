@@ -444,6 +444,17 @@ void write_fastq_file(const read_set_t &reads, std::string file) {
     f.close();
 }
 
+void write_polish_summary(const std::vector<std::string> &results, std::string file){
+   std::ofstream f;
+    f.open(file);
+    
+    for(auto &r: results){
+        f << r << std::endl;
+    }
+
+    f.close();
+}
+
 bool _comp_read_set_desc(read_t a, read_t b) {
     return a.seq.size() > b.seq.size();
 }

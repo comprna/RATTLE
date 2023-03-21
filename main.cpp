@@ -625,6 +625,8 @@ int main(int argc, char *argv[]) {
             "use this mode if data is direct RNA (disables checking both strands)", 0},
             { "verbose", {"--verbose"},
             "use this flag if need to print the progress", 0},
+            {"summary", {"--summary"},
+            "use this flag to print a summary of transcript/gene clusters used to genearte the transcriptome", 0}
         }};
 
         argagg::parser_results args;
@@ -660,6 +662,7 @@ int main(int argc, char *argv[]) {
         int n_threads = args["threads"].as<int>(1);
         bool is_rna = args["rna"];
         bool verbose = args["verbose"];
+        bool summary = args["summary"];
         std::vector<std::string> labels = splitString(args["label"].as<std::string>(""), ',');
 
         std::cerr << "Clustering consensus sequences..." << std::endl;
@@ -670,6 +673,9 @@ int main(int argc, char *argv[]) {
         // <cluster_step_id, polish_step_id>
         std::map<int, int> geneMap; // a map to record the correspondence of cluster and polish step gene cluster id
         int gid = -1;  // -1 for label the gene mode
+
+        std::vector<std::string> summary_results;
+
         for (auto &r: correction.consensi) {
             int total_reads = 0;
             auto creads = clusters[cid].seqs;
@@ -693,9 +699,10 @@ int main(int argc, char *argv[]) {
                     ++i;
                 }
 
-                if(reads[s.seq_id].header.find("gene_cluster") != std::string::npos){
-                    auto info = splitString(reads[s.seq_id].header, '_');
-                    int id = std::stoi(info[3]);
+                auto info_c = splitString(reads[s.seq_id].header, '_');
+                if(reads[s.seq_id].header.find("transcript_cluster") != std::string::npos){
+                    // auto info = splitString(reads[s.seq_id].header, '_');
+                    int id = std::stoi(info_c[4]);
                     // std::cout << reads[s.seq_id].header << " " << id << std::endl;
                     if(geneMap.find(id) == geneMap.end()){
                         if(gid == -1){
@@ -704,6 +711,16 @@ int main(int argc, char *argv[]) {
                         geneMap.insert(std::pair<int, int> (id, gid));
                     } else {
                         gid = geneMap.find(id)->second;
+                    }
+
+                    if(summary){
+                        std::string result = "transcript_cluster_" + std::to_string(std::stoi(info_c[2])) + ", gene_cluster_" + std::to_string(id) + ", new_cluster_" + std::to_string(cid);
+                        summary_results.push_back(result);
+                    }
+                } else {
+                    if(summary){
+                    std::string result = "gene_cluster_" + std::to_string(std::stoi(info_c[2])) + ", new_cluster_" + std::to_string(cid);
+                    summary_results.push_back(result);
                     }
                 }
             }
@@ -727,7 +744,7 @@ int main(int argc, char *argv[]) {
             if(gid != -1){
                 r.header = "@transcript_cluster_" + std::to_string(cid) + " gene_cluster_" + std::to_string(gid) + " generated_from_transcript_clusters=" + std::to_string(rcount) + " total_reads=" + std::to_string(total_reads) + " labels=";
             } else{
-                r.header = "@cluster_" + std::to_string(cid) + " generated_from_transcript_clusters=" + std::to_string(rcount) + " total_reads=" + std::to_string(total_reads) + " labels=";
+                r.header = "@cluster_" + std::to_string(cid) + " generated_from_consensi_clusters=" + std::to_string(rcount) + " total_reads=" + std::to_string(total_reads) + " labels=";
             }
             int i = 0;
             for(auto label: labels){
@@ -738,6 +755,9 @@ int main(int argc, char *argv[]) {
             gid = -1;
         }
 
+        if(summary){
+            write_polish_summary(summary_results, args["output"].as<std::string>(".") + "/polish_summary.tsv");
+        }
         write_fastq_file(correction.consensi, args["output"].as<std::string>(".") + "/transcriptome.fq");
         std::cerr << "Done" << std::endl;
     } else {

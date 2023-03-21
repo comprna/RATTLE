@@ -21,5 +21,6 @@ read_set_t read_fastq_file(std::string file, std::string sample_id);
 read_set_t read_fastq_file(std::string file);
 void write_fastq_file(const read_set_t &reads, std::string file);
 void sort_read_set(read_set_t &rs);
+void write_polish_summary(const std::vector<std::string> &results, std::string file);
 
 #endif
