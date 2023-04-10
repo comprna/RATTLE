@@ -1,7 +1,7 @@
 # RATTLE
 Reference-free reconstruction and quantification of transcriptomes from long-read sequencing
 
-* I. de la Rubia, A. Srivastava, W. Xue, J. A. Indi, S. Carbonell-Sala,  J. Lagarde,  M.M. Albà, E. Eyras. RATTLE: Reference-free reconstruction and quantification of transcriptomes from Nanopore long-read sequencing. bioRxiv doi: https://doi.org/10.1101/2020.02.08.939942
+* de la Rubia I, Srivastava A, Xue W, Indi JA, Carbonell-Sala S, Lagarde J, Albà MM, Eyras E. RATTLE: reference-free reconstruction and quantification of transcriptomes from Nanopore sequencing. Genome Biol. 2022 Jul 8;23(1):153. doi: https://doi.org/10.1186/s13059-022-02715-w. PMID: 35804393
 
 
 ----------------------------
