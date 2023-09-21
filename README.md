@@ -388,7 +388,7 @@ The output generated from this step is the transcriptome.fq at ./toyset/rna/outp
 
 | command          | 1 thread      | 24 threads    |	
 | :----------------|:-------------:| :-------------|
-| cluster 	       | 0m16.1s     |0m6.19s       |
+| cluster 	       | 0m16.1s     |0m4.24s       |
 | cluster_summary  |  0m0.05s     |-              |
 | extract_clusters |	0m0.11s	   |-              |  
 | correct  		     | 1m16.103s	   | 0m10.947s     |
