@@ -24,4 +24,4 @@ rule rattle_polish:
         output:
                 "toyset/rna/snakemake_output/transcriptome.fq"
         shell:
-                 """./rattle polish -i {input} -o toyset/rna/snakemake_output -t24 --rna """
+                 """./rattle polish -i {input} -o toyset/rna/snakemake_output -t 24 --rna """
