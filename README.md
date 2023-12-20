@@ -29,6 +29,9 @@ Reference-free reconstruction and quantification of transcriptomes from long-rea
 # Requirements
 GCC, G++ with C++14 suppport
 
+(GCC version < 10)
+
+
 # Installation
 * Clone the repository
 ```
