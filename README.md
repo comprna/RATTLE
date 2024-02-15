@@ -150,6 +150,12 @@ $ ./rattle cluster -h
 
 This clustering step will generate a file containing read clusters in binary format (clusters.out). To work with these clusters, the following commands are used.
 
+You can run the RATTLE pipeline with multiple inputs. RATTLE will keep track of the source label for each read. That is, RATTLE will create gene clusters, transcript clusters, and consensus transcript with all reads from all input samples, and you can identify which reads were used from each input sample in each cluster or transcript. You can simply specify the multiple inputs and labels separated by commas:
+
+```
+-i input_1,input_2,input_3,...,input_n -l label_1,label_2,label_3,...,label_n
+```
+
 ### Description of clustering parameters 
 **General parameters for the clustering step**
   
